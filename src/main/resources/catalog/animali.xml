@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalogo>
+    <animali>
+        <animale specie="Capibara" rarita="COMUNE" peso="10">
+            <nomi><nome>Cappy</nome><nome>Pippo</nome><nome>Mocha</nome></nomi>
+        </animale>
+        <animale specie="Capibara" rarita="RARO" peso="4">
+            <nomi><nome>Capitano</nome><nome>Fiorella</nome></nomi>
+        </animale>
+        <animale specie="Giraffa" rarita="COMUNE" peso="8">
+            <nomi><nome>Gigi</nome><nome>Stella</nome><nome>Tobia</nome></nomi>
+        </animale>
+        <animale specie="Giraffa" rarita="EPICO" peso="2">
+            <nomi><nome>Altea</nome><nome>Zenit</nome></nomi>
+        </animale>
+        <animale specie="Leone" rarita="RARO" peso="4">
+            <nomi><nome>Leo</nome><nome>Sultano</nome><nome>Zuri</nome></nomi>
+        </animale>
+        <animale specie="Leone" rarita="EPICO" peso="2">
+            <nomi><nome>Titano</nome></nomi>
+        </animale>
+        <animale specie="Leone" rarita="LEGGENDARIO" peso="1">
+            <nomi><nome>Re Sole</nome></nomi>
+        </animale>
+    </animali>
+
+    <strumenti>
+        <strumento nome="Rete" bonus="0.10"/>
+        <strumento nome="Trappola" bonus="0.20"/>
+        <strumento nome="Tranquillante" bonus="0.30"/>
+    </strumenti>
+
+    <cibi>
+        <cibo nome="Frutta" bonus="0.05"/>
+        <cibo nome="Carne" bonus="0.10"/>
+        <cibo nome="Banchetto" bonus="0.20"/>
+    </cibi>
+</catalogo>

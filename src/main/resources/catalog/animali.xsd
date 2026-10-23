@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+    <xs:simpleType name="Testo">
+        <xs:restriction base="xs:token">
+            <xs:minLength value="1"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="Rarita">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="COMUNE"/>
+            <xs:enumeration value="RARO"/>
+            <xs:enumeration value="EPICO"/>
+            <xs:enumeration value="LEGGENDARIO"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="Bonus">
+        <xs:restriction base="xs:double">
+            <xs:minInclusive value="0"/>
+            <xs:maxInclusive value="1"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:element name="catalogo">
+        <xs:complexType>
+            <xs:sequence>
+
+                <xs:element name="animali">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="animale" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="nomi">
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="nome" type="Testo" maxOccurs="unbounded"/>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                    <xs:attribute name="specie" type="Testo" use="required"/>
+                                    <xs:attribute name="rarita" type="Rarita" use="required"/>
+                                    <xs:attribute name="peso" type="xs:positiveInteger" use="required"/>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+
+                <xs:element name="strumenti">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="strumento" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:attribute name="nome" type="Testo" use="required"/>
+                                    <xs:attribute name="bonus" type="Bonus" use="required"/>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+
+                <xs:element name="cibi">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="cibo" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:attribute name="nome" type="Testo" use="required"/>
+                                    <xs:attribute name="bonus" type="Bonus" use="required"/>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

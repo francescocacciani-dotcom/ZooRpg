@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+    <xs:simpleType name="Testo">
+        <xs:restriction base="xs:token">
+            <xs:minLength value="1"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="Uuid">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="Bioma">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="SAVANA"/>
+            <xs:enumeration value="FORESTA"/>
+            <xs:enumeration value="PALUDE"/>
+            <xs:enumeration value="DESERTO"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="Rarita">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="COMUNE"/>
+            <xs:enumeration value="RARO"/>
+            <xs:enumeration value="EPICO"/>
+            <xs:enumeration value="LEGGENDARIO"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="Stato">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="SELVATICO"/>
+            <xs:enumeration value="IN_PERICOLO"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:element name="zoo">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="recinto" minOccurs="0" maxOccurs="unbounded">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="animale" minOccurs="0" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:attribute name="id" type="Uuid" use="required"/>
+                                    <xs:attribute name="specie" type="Testo" use="required"/>
+                                    <xs:attribute name="nome" type="Testo" use="required"/>
+                                    <xs:attribute name="rarita" type="Rarita" use="required"/>
+                                    <xs:attribute name="stato" type="Stato" use="required"/>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                        <xs:attribute name="nome" type="Testo" use="required"/>
+                        <xs:attribute name="bioma" type="Bioma" use="required"/>
+                        <xs:attribute name="capienza" type="xs:positiveInteger" use="required"/>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+            <xs:attribute name="nome" type="Testo" use="required"/>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
