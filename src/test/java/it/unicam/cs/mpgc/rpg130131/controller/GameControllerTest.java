@@ -16,7 +16,6 @@ import it.unicam.cs.mpgc.rpg130131.model.map.Posizione;
 import it.unicam.cs.mpgc.rpg130131.model.player.Giocatore;
 import it.unicam.cs.mpgc.rpg130131.model.zoo.Recinto;
 import it.unicam.cs.mpgc.rpg130131.model.zoo.Zoo;
-import it.unicam.cs.mpgc.rpg130131.persistence.XMLSaveRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;

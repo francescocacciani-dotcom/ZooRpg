@@ -14,6 +14,7 @@ import it.unicam.cs.mpgc.rpg130131.model.player.Giocatore;
 import it.unicam.cs.mpgc.rpg130131.model.zoo.Zoo;
 import it.unicam.cs.mpgc.rpg130131.persistence.PersistenzaException;
 import it.unicam.cs.mpgc.rpg130131.persistence.SaveRepository;
+import it.unicam.cs.mpgc.rpg130131.persistence.StatoPartita;
 
 import java.util.Map;
 import java.util.Objects;
@@ -26,11 +27,11 @@ import java.util.Optional;
 public class GameController {
 
     private final Mappa2D mappa;
-    private final Giocatore giocatore;
     private final SpawnManager spawnManager;
     private final EngineCattura engine;
     private final SaveRepository repository;
     private final int popolazioneObiettivo;
+    private Giocatore giocatore;
     private Zoo zoo;
 
     /**
@@ -122,18 +123,29 @@ public class GameController {
     }
 
     public void salva() throws PersistenzaException {
-        repository.salva(zoo);
+        repository.salva(new StatoPartita(zoo, giocatore));
     }
 
     /**
-     * Sostituisce lo zoo corrente con quello salvato.
+     * Sostituisce zoo e giocatore correnti con quelli salvati. Chi mostra lo stato (la vista)
+     * deve quindi rileggerlo da {@link #getZoo()} e {@link #getGiocatore()} dopo il caricamento.
      *
-     * @return true se esisteva un salvataggio, false altrimenti (lo zoo resta invariato)
+     * @return true se esisteva un salvataggio, false altrimenti (lo stato resta invariato)
+     * @throws PersistenzaException se il salvataggio è illeggibile o la posizione salvata è fuori mappa
      */
     public boolean carica() throws PersistenzaException {
-        Optional<Zoo> salvato = repository.carica();
-        salvato.ifPresent(caricato -> this.zoo = caricato);
-        return salvato.isPresent();
+        Optional<StatoPartita> salvato = repository.carica();
+        if (salvato.isEmpty()) {
+            return false;
+        }
+        StatoPartita stato = salvato.get();
+        Posizione posizione = stato.giocatore().getPosizione();
+        if (!mappa.contiene(posizione)) {
+            throw new PersistenzaException("La posizione salvata è fuori dalla mappa: " + posizione);
+        }
+        this.zoo = stato.zoo();
+        this.giocatore = stato.giocatore();
+        return true;
     }
 
     public Mappa2D getMappa() {
