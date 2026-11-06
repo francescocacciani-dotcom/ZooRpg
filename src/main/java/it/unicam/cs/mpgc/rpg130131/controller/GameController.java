@@ -13,7 +13,7 @@ import it.unicam.cs.mpgc.rpg130131.model.map.Posizione;
 import it.unicam.cs.mpgc.rpg130131.model.player.Giocatore;
 import it.unicam.cs.mpgc.rpg130131.model.zoo.Zoo;
 import it.unicam.cs.mpgc.rpg130131.persistence.PersistenzaException;
-import it.unicam.cs.mpgc.rpg130131.persistence.ZooSaveRepository;
+import it.unicam.cs.mpgc.rpg130131.persistence.SaveRepository;
 
 import java.util.Map;
 import java.util.Objects;
@@ -29,7 +29,7 @@ public class GameController {
     private final Giocatore giocatore;
     private final SpawnManager spawnManager;
     private final EngineCattura engine;
-    private final ZooSaveRepository repository;
+    private final SaveRepository repository;
     private final int popolazioneObiettivo;
     private Zoo zoo;
 
@@ -42,7 +42,7 @@ public class GameController {
                           Zoo zoo,
                           SpawnManager spawnManager,
                           EngineCattura engine,
-                          ZooSaveRepository repository,
+                          SaveRepository repository,
                           int popolazioneObiettivo) {
         this.mappa = Objects.requireNonNull(mappa, "mappa");
         this.giocatore = Objects.requireNonNull(giocatore, "giocatore");

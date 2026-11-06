@@ -16,7 +16,7 @@ import it.unicam.cs.mpgc.rpg130131.model.map.Posizione;
 import it.unicam.cs.mpgc.rpg130131.model.player.Giocatore;
 import it.unicam.cs.mpgc.rpg130131.model.zoo.Recinto;
 import it.unicam.cs.mpgc.rpg130131.model.zoo.Zoo;
-import it.unicam.cs.mpgc.rpg130131.persistence.XMLZooSaveRepository;
+import it.unicam.cs.mpgc.rpg130131.persistence.XMLSaveRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -68,7 +68,7 @@ class GameControllerTest {
         controller = new GameController(
                 mappa, giocatore, zoo, spawn,
                 new EngineCattura((animale, strumento, esca) -> 0.5, dado),
-                new XMLZooSaveRepository(cartella.resolve("zoo.xml"), registro),
+                new XMLSaveRepository(cartella.resolve("zoo.xml"), registro),
                 1);
         controller.inizia();
         giocatore.getInventario().aggiungi(RETE, 1);
@@ -190,8 +190,8 @@ class GameControllerTest {
     void parametriNonValidiRifiutati() {
         Mappa2D mappa = new Mappa2D(2, 2, p -> BiomaEnum.SAVANA);
         Giocatore fuori = new Giocatore("Tester", new Posizione(5, 5), new Inventario());
-        XMLZooSaveRepository repository =
-                new XMLZooSaveRepository(cartella.resolve("altro.xml"), RegistroSpecie.predefinito());
+        XMLSaveRepository repository =
+                new XMLSaveRepository(cartella.resolve("altro.xml"), RegistroSpecie.predefinito());
         EngineCattura engine = new EngineCattura((a, s, e) -> 0.5);
 
         assertThrows(IllegalArgumentException.class,
