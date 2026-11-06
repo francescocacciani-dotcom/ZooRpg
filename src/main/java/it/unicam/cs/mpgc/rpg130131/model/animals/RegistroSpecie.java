@@ -26,7 +26,10 @@ public class RegistroSpecie {
         return new RegistroSpecie()
                 .registra("Capibara", Capibara::new)
                 .registra("Giraffa", Giraffa::new)
-                .registra("Leone", Leone::new);
+                .registra("Leone", Leone::new)
+                .registra("Leone", Leone::new)
+                .registra("Orso", Orso::new)
+                .registra("Panda", Panda::new);
     }
 
     /**

@@ -22,6 +22,24 @@
         <animale specie="Leone" rarita="LEGGENDARIO" peso="1">
             <nomi><nome>Re Sole</nome></nomi>
         </animale>
+        <animale specie="Orso" rarita="COMUNE" peso="8">
+            <nomi><nome>Baloo</nome><nome>Bruno</nome><nome>Yogi</nome></nomi>
+        </animale>
+        <animale specie="Orso" rarita="EPICO" peso="2">
+            <nomi><nome>Kodiak</nome></nomi>
+        </animale>
+        <animale specie="Panda" rarita="RARO" peso="3">
+            <nomi><nome>Bao</nome><nome>Mei</nome></nomi>
+        </animale>
+        <animale specie="Panda" rarita="LEGGENDARIO" peso="1">
+            <nomi><nome>Xiao</nome></nomi>
+        </animale>
+        <animale specie="Cammello" rarita="COMUNE" peso="8">
+            <nomi><nome>Dune</nome><nome>Sahara</nome><nome>Omar</nome></nomi>
+        </animale>
+        <animale specie="Cammello" rarita="RARO" peso="3">
+            <nomi><nome>Miraggio</nome></nomi>
+        </animale>
     </animali>
 
     <strumenti>

@@ -13,7 +13,7 @@ class RegistroSpecieTest {
 
     @Test
     void predefinitoConosceLeSpecieBase() {
-        assertEquals(Set.of("Capibara", "Giraffa", "Leone"), registro.specie());
+        assertEquals(Set.of("Cammello", "Capibara", "Giraffa", "Leone", "Orso", "Panda"), registro.specie());
     }
 
     @Test

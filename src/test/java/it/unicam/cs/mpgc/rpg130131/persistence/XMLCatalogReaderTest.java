@@ -1,8 +1,10 @@
 package it.unicam.cs.mpgc.rpg130131.persistence;
 
 import it.unicam.cs.mpgc.rpg130131.model.animals.RegistroSpecie;
+import it.unicam.cs.mpgc.rpg130131.model.animals.StatoAnimale;
 import it.unicam.cs.mpgc.rpg130131.model.catalog.Catalogo;
 import it.unicam.cs.mpgc.rpg130131.model.inventory.StrumentoCattura;
+import it.unicam.cs.mpgc.rpg130131.model.map.BiomaEnum;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -39,5 +41,18 @@ class XMLCatalogReaderTest {
                 XMLCatalogReader.class.getResource("/catalog/animali.xsd"));
 
         assertThrows(PersistenzaException.class, lettore::leggi);
+    }
+
+    @Test
+    void ognBiomaHaAlmenoUnaSpecie() throws Exception {
+        Catalogo catalogo = XMLCatalogReader.predefinito().leggi();
+        RegistroSpecie registro = RegistroSpecie.predefinito();
+
+        for (BiomaEnum bioma : BiomaEnum.values()) {
+            boolean coperto = catalogo.animali().stream().anyMatch(voce ->
+                    registro.crea(voce.specie(), "x", voce.rarita(), StatoAnimale.SELVATICO)
+                            .getBiomaNativo() == bioma);
+            assertTrue(coperto, "Nessun animale per il bioma " + bioma);
+        }
     }
 }
