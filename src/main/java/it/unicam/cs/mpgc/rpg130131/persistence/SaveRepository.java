@@ -1,14 +1,12 @@
 package it.unicam.cs.mpgc.rpg130131.persistence;
 
-import it.unicam.cs.mpgc.rpg130131.model.zoo.Zoo;
-
 import java.util.Optional;
 
-/** Salvataggio e ripristino dello zoo, indipendente dal formato. */
+/** Salvataggio e ripristino dello stato della partita, indipendente dal formato. */
 public interface SaveRepository {
 
-    void salva(Zoo zoo) throws PersistenzaException;
+    void salva(StatoPartita stato) throws PersistenzaException;
 
-    /** @return lo zoo salvato, oppure vuoto se non esiste ancora un salvataggio */
-    Optional<Zoo> carica() throws PersistenzaException;
+    /** @return lo stato salvato, oppure vuoto se non esiste ancora un salvataggio */
+    Optional<StatoPartita> carica() throws PersistenzaException;
 }
