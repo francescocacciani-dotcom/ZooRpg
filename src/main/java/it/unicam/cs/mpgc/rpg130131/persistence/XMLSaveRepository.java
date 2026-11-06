@@ -22,7 +22,7 @@ import java.util.UUID;
 import static it.unicam.cs.mpgc.rpg130131.persistence.UtilitaXML.figli;
 
 /** Salva e ricarica lo zoo in un file XML validato con {@code /save/zoo.xsd}. */
-public class XMLZooSaveRepository implements ZooSaveRepository {
+public class XMLSaveRepository implements SaveRepository {
 
     private static final String RISORSA_XSD = "/save/zoo.xsd";
 
@@ -30,10 +30,10 @@ public class XMLZooSaveRepository implements ZooSaveRepository {
     private final RegistroSpecie registro;
     private final URL schema;
 
-    public XMLZooSaveRepository(Path file, RegistroSpecie registro) {
+    public XMLSaveRepository(Path file, RegistroSpecie registro) {
         this.file = Objects.requireNonNull(file, "file");
         this.registro = Objects.requireNonNull(registro, "registro");
-        this.schema = XMLZooSaveRepository.class.getResource(RISORSA_XSD);
+        this.schema = XMLSaveRepository.class.getResource(RISORSA_XSD);
         if (schema == null) {
             throw new IllegalStateException("Schema del salvataggio mancante: " + RISORSA_XSD);
         }

@@ -34,8 +34,8 @@ class XMLZooSaveRepositoryTest {
     @Test
     void salvaECaricaMantieneTutto() throws Exception {
         Zoo originale = zooDiProva();
-        XMLZooSaveRepository repository =
-                new XMLZooSaveRepository(cartella.resolve("salvataggi/zoo.xml"), registro);
+        XMLSaveRepository repository =
+                new XMLSaveRepository(cartella.resolve("salvataggi/zoo.xml"), registro);
 
         repository.salva(originale);
         Zoo caricato = repository.carica().orElseThrow();
@@ -59,7 +59,7 @@ class XMLZooSaveRepositoryTest {
 
     @Test
     void ilSalvataggioSostituisceQuelloPrecedente() throws Exception {
-        XMLZooSaveRepository repository = new XMLZooSaveRepository(cartella.resolve("zoo.xml"), registro);
+        XMLSaveRepository repository = new XMLSaveRepository(cartella.resolve("zoo.xml"), registro);
         repository.salva(zooDiProva());
         repository.salva(new Zoo("Zoo vuoto"));
 
@@ -71,7 +71,7 @@ class XMLZooSaveRepositoryTest {
 
     @Test
     void senzaFileNonCeNullaDaCaricare() throws Exception {
-        XMLZooSaveRepository repository = new XMLZooSaveRepository(cartella.resolve("assente.xml"), registro);
+        XMLSaveRepository repository = new XMLSaveRepository(cartella.resolve("assente.xml"), registro);
         assertTrue(repository.carica().isEmpty());
     }
 
@@ -79,7 +79,7 @@ class XMLZooSaveRepositoryTest {
     void fileNonXmlRifiutato() throws Exception {
         Path file = cartella.resolve("rotto.xml");
         Files.writeString(file, "questo non è xml");
-        XMLZooSaveRepository repository = new XMLZooSaveRepository(file, registro);
+        XMLSaveRepository repository = new XMLSaveRepository(file, registro);
         assertThrows(PersistenzaException.class, repository::carica);
     }
 
@@ -95,7 +95,7 @@ class XMLZooSaveRepositoryTest {
                   </recinto>
                 </zoo>
                 """);
-        XMLZooSaveRepository repository = new XMLZooSaveRepository(file, registro);
+        XMLSaveRepository repository = new XMLSaveRepository(file, registro);
         assertThrows(PersistenzaException.class, repository::carica);
     }
 
@@ -110,7 +110,7 @@ class XMLZooSaveRepositoryTest {
                   </recinto>
                 </zoo>
                 """);
-        XMLZooSaveRepository repository = new XMLZooSaveRepository(file, registro);
+        XMLSaveRepository repository = new XMLSaveRepository(file, registro);
         assertThrows(PersistenzaException.class, repository::carica);
     }
 }

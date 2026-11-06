@@ -5,7 +5,7 @@ import it.unicam.cs.mpgc.rpg130131.model.zoo.Zoo;
 import java.util.Optional;
 
 /** Salvataggio e ripristino dello zoo, indipendente dal formato. */
-public interface ZooSaveRepository {
+public interface SaveRepository {
 
     void salva(Zoo zoo) throws PersistenzaException;
 
