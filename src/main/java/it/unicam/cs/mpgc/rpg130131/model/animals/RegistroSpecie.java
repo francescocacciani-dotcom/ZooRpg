@@ -24,9 +24,9 @@ public class RegistroSpecie {
     /** @return un registro con le specie incluse nel gioco */
     public static RegistroSpecie predefinito() {
         return new RegistroSpecie()
+                .registra("Cammello", Cammello::new)
                 .registra("Capibara", Capibara::new)
                 .registra("Giraffa", Giraffa::new)
-                .registra("Leone", Leone::new)
                 .registra("Leone", Leone::new)
                 .registra("Orso", Orso::new)
                 .registra("Panda", Panda::new);
