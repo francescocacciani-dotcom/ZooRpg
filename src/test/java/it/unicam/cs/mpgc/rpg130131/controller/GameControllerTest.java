@@ -16,10 +16,13 @@ import it.unicam.cs.mpgc.rpg130131.model.map.Posizione;
 import it.unicam.cs.mpgc.rpg130131.model.player.Giocatore;
 import it.unicam.cs.mpgc.rpg130131.model.zoo.Recinto;
 import it.unicam.cs.mpgc.rpg130131.model.zoo.Zoo;
+import it.unicam.cs.mpgc.rpg130131.persistence.PersistenzaException;
+import it.unicam.cs.mpgc.rpg130131.persistence.XMLSaveRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Random;
@@ -67,7 +70,7 @@ class GameControllerTest {
         controller = new GameController(
                 mappa, giocatore, zoo, spawn,
                 new EngineCattura((animale, strumento, esca) -> 0.5, dado),
-                new XMLSaveRepository(cartella.resolve("zoo.xml"), registro),
+                new XMLSaveRepository(cartella.resolve("partita.xml"), registro),
                 1);
         controller.inizia();
         giocatore.getInventario().aggiungi(RETE, 1);
@@ -173,16 +176,42 @@ class GameControllerTest {
     }
 
     @Test
-    void salvaECaricaRipristinaLoZoo() throws Exception {
+    void salvaECaricaRipristinaZooGiocatoreEInventario() throws Exception {
+        giocatore.getInventario().aggiungi(CARNE, 2);
         controller.tentaCattura(RETE);
-        Zoo prima = controller.getZoo();
+        Zoo zooSalvato = controller.getZoo();
+        Posizione posizioneSalvata = giocatore.getPosizione();
         controller.salva();
+
+        // modifico lo stato dopo il salvataggio: il caricamento deve annullare queste modifiche
+        giocatore.getInventario().aggiungi(RETE, 5);
+        giocatore.spostaA(new Posizione((posizioneSalvata.x() + 1) % 3, 0));
 
         assertTrue(controller.carica());
 
-        assertNotSame(prima, controller.getZoo());
-        assertEquals(prima.getStatistiche(), controller.getZoo().getStatistiche());
-        assertEquals(1, controller.getZoo().getAnimali().size());
+        Giocatore caricato = controller.getGiocatore();
+        assertNotSame(giocatore, caricato);
+        assertEquals(posizioneSalvata, caricato.getPosizione());
+        assertEquals(0, caricato.getInventario().quantita(RETE));
+        assertEquals(2, caricato.getInventario().quantita(CARNE));
+        assertNotSame(zooSalvato, controller.getZoo());
+        assertEquals(zooSalvato.getStatistiche(), controller.getZoo().getStatistiche());
+    }
+
+    @Test
+    void caricaRifiutaUnaPosizioneFuoriDallaMappa() throws Exception {
+        Files.writeString(cartella.resolve("partita.xml"), """
+                <partita>
+                  <giocatore nome="Tester" x="99" y="0"><inventario/></giocatore>
+                  <zoo nome="Z"/>
+                </partita>
+                """);
+        Zoo prima = controller.getZoo();
+
+        assertThrows(PersistenzaException.class, controller::carica);
+
+        assertSame(prima, controller.getZoo());
+        assertSame(giocatore, controller.getGiocatore());
     }
 
     @Test
@@ -196,6 +225,7 @@ class GameControllerTest {
         assertThrows(IllegalArgumentException.class,
                 () -> new GameController(mappa, fuori, zoo, spawn, engine, repository, 1));
         assertThrows(IllegalArgumentException.class,
-                () -> new GameController(mappa, giocatore, zoo, spawn, engine, repository, -1));
+                () -> new GameController(mappa, new Giocatore("Ok", new Posizione(0, 0), new Inventario()),
+                        zoo, spawn, engine, repository, -1));
     }
 }
