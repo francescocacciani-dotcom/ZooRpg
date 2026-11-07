@@ -6,9 +6,6 @@ import javafx.application.Application;
 /** Punto di ingresso. Non estende Application: serve a poter avviare JavaFX da Gradle e IDE. */
 public final class Main {
 
-    private Main() {
-    }
-
     public static void main(String[] args) {
         Application.launch(GameApp.class, args);
     }

@@ -32,7 +32,7 @@ import java.util.Optional;
 public class GamePane extends BorderPane {
 
     private final GameFactory factory;
-    private final MappaView mappaView = new MappaView();
+    private final MappaView mappaView = new MappaView(new ImmaginiAnimali());
     private final PannelloCattura pannelloCattura = new PannelloCattura();
     private final InventarioView inventarioView = new InventarioView();
     private final ZooView zooView = new ZooView();

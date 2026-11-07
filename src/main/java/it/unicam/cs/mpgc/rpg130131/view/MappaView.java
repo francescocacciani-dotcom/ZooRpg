@@ -11,20 +11,31 @@ import it.unicam.cs.mpgc.rpg130131.model.map.Posizione;
 import javafx.geometry.VPos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
 
+import java.util.Objects;
+import java.util.Optional;
+
 /**
  * Disegna la mappa: colore per bioma, un cerchio per ogni animale (colore = rarità,
- * bordo rosso = in pericolo) e il giocatore evidenziato con un bordo e un segnalino.
+ * bordo rosso = in pericolo) con l'icona della specie, e il giocatore evidenziato.
  */
 public class MappaView extends Canvas implements VistaAggiornabile {
 
     private static final double CELLA = 48;
     private static final double RAGGIO_ANIMALE = 16;
+    private static final int LATO_ICONA = 26;
     private static final Color COLORE_GIOCATORE = Color.web("#1B1F8A");
+
+    private final ImmaginiAnimali immagini;
+
+    public MappaView(ImmaginiAnimali immagini) {
+        this.immagini = Objects.requireNonNull(immagini, "immagini");
+    }
 
     @Override
     public void aggiorna(GameController controller) {
@@ -49,7 +60,7 @@ public class MappaView extends Canvas implements VistaAggiornabile {
         gc.strokeRect(x, y, CELLA, CELLA);
     }
 
-    private static void disegnaAnimale(GraphicsContext gc, Posizione posizione, Animale animale) {
+    private void disegnaAnimale(GraphicsContext gc, Posizione posizione, Animale animale) {
         double cx = posizione.x() * CELLA + CELLA / 2;
         double cy = posizione.y() * CELLA + CELLA / 2;
         double diametro = RAGGIO_ANIMALE * 2;
@@ -62,7 +73,12 @@ public class MappaView extends Canvas implements VistaAggiornabile {
         gc.setLineWidth(inPericolo ? 3 : 1.5);
         gc.strokeOval(cx - RAGGIO_ANIMALE, cy - RAGGIO_ANIMALE, diametro, diametro);
 
-        disegnaTesto(gc, animale.getSpecie().substring(0, 1), cx, cy, 16, Color.BLACK);
+        Optional<Image> icona = immagini.perSpecie(animale.getSpecie(), LATO_ICONA);
+        if (icona.isPresent()) {
+            gc.drawImage(icona.get(), cx - LATO_ICONA / 2.0, cy - LATO_ICONA / 2.0, LATO_ICONA, LATO_ICONA);
+        } else {
+            disegnaTesto(gc, animale.getSpecie().substring(0, 1), cx, cy, 16, Color.BLACK);
+        }
     }
 
     private static void disegnaGiocatore(GraphicsContext gc, Posizione posizione) {
