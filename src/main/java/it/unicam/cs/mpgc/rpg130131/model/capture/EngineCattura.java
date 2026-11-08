@@ -31,13 +31,20 @@ public class EngineCattura {
     }
 
     /**
+     * Probabilità di riuscita di un tentativo, senza effettuarlo.
+     *
      * @throws IllegalStateException se il calcolatore restituisce una probabilità fuori da [0, 1]
      */
-    public RisultatoCattura tenta(Animale animale, StrumentoCattura strumento, Cibo esca) {
+    public double probabilita(Animale animale, StrumentoCattura strumento, Cibo esca) {
         double probabilita = calcolatore.calcola(animale, strumento, esca);
         if (probabilita < 0 || probabilita > 1) {
             throw new IllegalStateException("Probabilità non valida: " + probabilita);
         }
+        return probabilita;
+    }
+
+    public RisultatoCattura tenta(Animale animale, StrumentoCattura strumento, Cibo esca) {
+        double probabilita = probabilita(animale, strumento, esca);
         return new RisultatoCattura(random.nextDouble() < probabilita, probabilita);
     }
 }

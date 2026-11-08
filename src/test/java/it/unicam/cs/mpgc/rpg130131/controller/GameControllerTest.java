@@ -4,6 +4,7 @@ import it.unicam.cs.mpgc.rpg130131.controller.EsitoTentativo.Tipo;
 import it.unicam.cs.mpgc.rpg130131.model.animals.RaritaEnum;
 import it.unicam.cs.mpgc.rpg130131.model.animals.RegistroSpecie;
 import it.unicam.cs.mpgc.rpg130131.model.capture.EngineCattura;
+import it.unicam.cs.mpgc.rpg130131.model.capture.PoliticaRicompensa;
 import it.unicam.cs.mpgc.rpg130131.model.catalog.Catalogo;
 import it.unicam.cs.mpgc.rpg130131.model.catalog.VoceAnimale;
 import it.unicam.cs.mpgc.rpg130131.model.inventory.Cibo;
@@ -25,6 +26,8 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
+import java.util.OptionalDouble;
 import java.util.Random;
 import java.util.random.RandomGenerator;
 
@@ -56,8 +59,12 @@ class GameControllerTest {
         return nuovo;
     }
 
-    /** Mappa di 3 celle di savana con un solo animale (un leone) e probabilità di cattura fissa al 50%. */
     private void creaController(RandomGenerator dado, Zoo zooIniziale) {
+        creaController(dado, zooIniziale, animale -> Map.of());
+    }
+
+    /** Mappa di 3 celle di savana con un solo animale (un leone) e probabilità di cattura fissa al 50%. */
+    private void creaController(RandomGenerator dado, Zoo zooIniziale, PoliticaRicompensa premio) {
         Mappa2D mappa = new Mappa2D(3, 1, p -> BiomaEnum.SAVANA);
         Catalogo catalogo = new Catalogo(
                 List.of(new VoceAnimale("Leone", RaritaEnum.COMUNE, 1, List.of("Leo"))),
@@ -70,6 +77,7 @@ class GameControllerTest {
         controller = new GameController(
                 mappa, giocatore, zoo, spawn,
                 new EngineCattura((animale, strumento, esca) -> 0.5, dado),
+                premio,
                 new XMLSaveRepository(cartella.resolve("partita.xml"), registro),
                 1);
         controller.inizia();
@@ -223,9 +231,45 @@ class GameControllerTest {
         EngineCattura engine = new EngineCattura((a, s, e) -> 0.5);
 
         assertThrows(IllegalArgumentException.class,
-                () -> new GameController(mappa, fuori, zoo, spawn, engine, repository, 1));
+                () -> new GameController(mappa, fuori, zoo, spawn, engine, animale -> Map.of(), repository, 1));
         assertThrows(IllegalArgumentException.class,
                 () -> new GameController(mappa, new Giocatore("Ok", new Posizione(0, 0), new Inventario()),
-                        zoo, spawn, engine, repository, -1));
+                        zoo, spawn, engine,animale -> Map.of() ,repository, -1));
+    }
+
+    @Test
+    void laCatturaDaLaRicompensa() {
+        creaController(DADO_BASSO, zooConSavana(), animale -> Map.of(CARNE, 2));
+
+        EsitoTentativo esito = controller.tentaCattura(RETE);
+
+        assertEquals(Map.of(CARNE, 2), esito.ricompensa());
+        assertEquals(2, giocatore.getInventario().quantita(CARNE));
+    }
+
+    @Test
+    void senzaCatturaNienteRicompensa() {
+        creaController(DADO_ALTO, zooConSavana(), animale -> Map.of(CARNE, 2));
+
+        EsitoTentativo esito = controller.tentaCattura(RETE);
+
+        assertTrue(esito.ricompensa().isEmpty());
+        assertEquals(0, giocatore.getInventario().quantita(CARNE));
+    }
+
+    @Test
+    void anteprimaDellaProbabilita() {
+        OptionalDouble anteprima = controller.anteprimaProbabilita(RETE, Cibo.NESSUNA_ESCA);
+
+        assertEquals(0.5, anteprima.orElseThrow(), 1e-9);
+        assertEquals(1, giocatore.getInventario().quantita(RETE), "l'anteprima non consuma nulla");
+        assertTrue(zoo.getAnimali().isEmpty());
+    }
+
+    @Test
+    void anteprimaVuotaSenzaAnimale() {
+        spawn.rimuovi(giocatore.getPosizione());
+
+        assertTrue(controller.anteprimaProbabilita(RETE, Cibo.NESSUNA_ESCA).isEmpty());
     }
 }

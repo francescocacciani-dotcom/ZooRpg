@@ -13,6 +13,7 @@ import it.unicam.cs.mpgc.rpg130131.model.zoo.StatisticheZoo;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -63,5 +64,17 @@ class MessaggiTest {
         String testo = Messaggi.statistiche(StatisticheZoo.calcola(List.of()));
         assertTrue(testo.contains("Animali: 0/0"));
         assertTrue(testo.contains("Nessun animale ancora"));
+    }
+
+    @Test
+    void catturaMostraLaRicompensa() {
+        EsitoTentativo esito = new EsitoTentativo(Tipo.CATTURATO, leone, 0.45,
+                Map.of(new StrumentoCattura("Rete", 0.1), 2));
+        assertTrue(Messaggi.esito(esito).contains("Ricompensa: Rete (+10%) ×2"));
+    }
+
+    @Test
+    void anteprimaMostraLaPercentuale() {
+        assertEquals("Probabilità di cattura: 40%", Messaggi.anteprima(0.4));
     }
 }

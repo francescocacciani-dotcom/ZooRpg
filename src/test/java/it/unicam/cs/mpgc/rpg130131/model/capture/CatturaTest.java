@@ -76,4 +76,14 @@ class CatturaTest {
         assertThrows(IllegalStateException.class, () -> engine.tenta(
                 new Giraffa("Gigi", RaritaEnum.COMUNE, StatoAnimale.SELVATICO), rete));
     }
+
+    @Test
+    void engineEspoLaProbabilitaSenzaTirareIlDado() {
+        EngineCattura engine = new EngineCattura((a, s, e) -> 0.5, () -> {
+            throw new AssertionError("il dado non va tirato per un'anteprima");
+        });
+        Animale giraffa = new Giraffa("Gigi", RaritaEnum.COMUNE, StatoAnimale.SELVATICO);
+
+        assertEquals(0.5, engine.probabilita(giraffa, rete, Cibo.NESSUNA_ESCA), EPS);
+    }
 }

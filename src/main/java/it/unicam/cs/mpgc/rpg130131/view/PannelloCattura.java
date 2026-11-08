@@ -4,6 +4,7 @@ import it.unicam.cs.mpgc.rpg130131.controller.GameController;
 import it.unicam.cs.mpgc.rpg130131.model.animals.Animale;
 import it.unicam.cs.mpgc.rpg130131.model.inventory.Cibo;
 import it.unicam.cs.mpgc.rpg130131.model.inventory.Inventario;
+import it.unicam.cs.mpgc.rpg130131.model.inventory.Oggetto;
 import it.unicam.cs.mpgc.rpg130131.model.inventory.StrumentoCattura;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
@@ -16,14 +17,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalDouble;
 
 /** Mostra l'animale presente nella cella e permette di scegliere strumento ed esca per catturarlo. */
 public class PannelloCattura extends VBox implements VistaAggiornabile {
 
     private final Label descrizione = new Label();
+    private final Label probabilita = new Label();
     private final ChoiceBox<StrumentoCattura> sceltaStrumento = new ChoiceBox<>();
     private final ChoiceBox<Cibo> sceltaEsca = new ChoiceBox<>();
     private final Button bottoneCattura = new Button("Cattura (Spazio)");
+    private GameController controller;
     private Inventario inventario;
 
     public PannelloCattura() {
@@ -57,12 +61,14 @@ public class PannelloCattura extends VBox implements VistaAggiornabile {
                 throw new UnsupportedOperationException();
             }
         });
+        sceltaStrumento.valueProperty().addListener((osservato, vecchio, nuovo) -> aggiornaProbabilita());
+        sceltaEsca.valueProperty().addListener((osservato, vecchia, nuova) -> aggiornaProbabilita());
 
         getChildren().addAll(
                 new Label("Cattura"), descrizione,
                 new Label("Strumento"), sceltaStrumento,
                 new Label("Esca"), sceltaEsca,
-                bottoneCattura);
+                probabilita, bottoneCattura);
     }
 
     /** Imposta l'azione da eseguire quando il giocatore preme il pulsante. */
@@ -85,7 +91,8 @@ public class PannelloCattura extends VBox implements VistaAggiornabile {
 
     @Override
     public void aggiorna(GameController controller) {
-        inventario = controller.getGiocatore().getInventario();
+        this.controller = controller;
+        this.inventario = controller.getGiocatore().getInventario();
 
         List<StrumentoCattura> strumenti =
                 inventario.getContenutoDi(StrumentoCattura.class).keySet().stream().toList();
@@ -103,13 +110,21 @@ public class PannelloCattura extends VBox implements VistaAggiornabile {
         }
         descrizione.setText(testo);
         bottoneCattura.setDisable(animale.isEmpty() || strumenti.isEmpty());
+        aggiornaProbabilita();
     }
 
-    private int quantita(Object oggetto) {
-        if (inventario == null || !(oggetto instanceof it.unicam.cs.mpgc.rpg130131.model.inventory.Oggetto o)) {
-            return 0;
+    private void aggiornaProbabilita() {
+        StrumentoCattura strumento = sceltaStrumento.getValue();
+        if (controller == null || strumento == null) {
+            probabilita.setText("");
+            return;
         }
-        return inventario.quantita(o);
+        OptionalDouble stima = controller.anteprimaProbabilita(strumento, getEscaScelta());
+        probabilita.setText(stima.isPresent() ? Messaggi.anteprima(stima.getAsDouble()) : "");
+    }
+
+    private int quantita(Oggetto oggetto) {
+        return inventario == null ? 0 : inventario.quantita(oggetto);
     }
 
     /** Aggiorna le voci mantenendo la scelta precedente, se è ancora disponibile. */

@@ -28,7 +28,6 @@ public class GameApp extends Application {
         RegistroSpecie registro = RegistroSpecie.predefinito();
         Path fileSalvataggio = Path.of(System.getProperty("user.home"), ".zoorescue", "partita.xml");
 
-
         GameFactory factory = new GameFactory(
                 XMLCatalogReader.predefinito(),
                 registro,

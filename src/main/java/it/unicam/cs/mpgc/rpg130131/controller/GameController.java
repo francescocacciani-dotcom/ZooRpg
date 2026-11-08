@@ -3,9 +3,11 @@ package it.unicam.cs.mpgc.rpg130131.controller;
 import it.unicam.cs.mpgc.rpg130131.controller.EsitoTentativo.Tipo;
 import it.unicam.cs.mpgc.rpg130131.model.animals.Animale;
 import it.unicam.cs.mpgc.rpg130131.model.capture.EngineCattura;
+import it.unicam.cs.mpgc.rpg130131.model.capture.PoliticaRicompensa;
 import it.unicam.cs.mpgc.rpg130131.model.capture.RisultatoCattura;
 import it.unicam.cs.mpgc.rpg130131.model.inventory.Cibo;
 import it.unicam.cs.mpgc.rpg130131.model.inventory.Inventario;
+import it.unicam.cs.mpgc.rpg130131.model.inventory.Oggetto;
 import it.unicam.cs.mpgc.rpg130131.model.inventory.StrumentoCattura;
 import it.unicam.cs.mpgc.rpg130131.model.map.Direzione;
 import it.unicam.cs.mpgc.rpg130131.model.map.Mappa2D;
@@ -19,6 +21,7 @@ import it.unicam.cs.mpgc.rpg130131.persistence.StatoPartita;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalDouble;
 
 /**
  * Coordina una partita: muove il giocatore, gestisce i tentativi di cattura e il salvataggio.
@@ -33,6 +36,7 @@ public class GameController {
     private final int popolazioneObiettivo;
     private Giocatore giocatore;
     private Zoo zoo;
+    private final PoliticaRicompensa ricompensa;
 
     /**
      * @param popolazioneObiettivo numero di animali che il gioco cerca di mantenere sulla mappa
@@ -43,6 +47,7 @@ public class GameController {
                           Zoo zoo,
                           SpawnManager spawnManager,
                           EngineCattura engine,
+                          PoliticaRicompensa ricompensa,
                           SaveRepository repository,
                           int popolazioneObiettivo) {
         this.mappa = Objects.requireNonNull(mappa, "mappa");
@@ -50,6 +55,7 @@ public class GameController {
         this.zoo = Objects.requireNonNull(zoo, "zoo");
         this.spawnManager = Objects.requireNonNull(spawnManager, "spawnManager");
         this.engine = Objects.requireNonNull(engine, "engine");
+        this.ricompensa = Objects.requireNonNull(ricompensa, "ricompensa");
         this.repository = Objects.requireNonNull(repository, "repository");
         if (popolazioneObiettivo < 0) {
             throw new IllegalArgumentException("L'obiettivo non può essere negativo: " + popolazioneObiettivo);
@@ -117,9 +123,28 @@ public class GameController {
         }
 
         spawnManager.rimuovi(giocatore.getPosizione());
+        spawnManager.rimuovi(giocatore.getPosizione());
         zoo.accogli(animale);
+        Map<Oggetto, Integer> premio = ricompensa.perCattura(animale);
+        premio.forEach(inventario::aggiungi);
         spawnManager.mantieniPopolazione(mappa, popolazioneObiettivo);
-        return new EsitoTentativo(Tipo.CATTURATO, animale, risultato.probabilita());
+        return new EsitoTentativo(Tipo.CATTURATO, animale, risultato.probabilita(), premio);
+    }
+
+    /**
+     * Probabilità di cattura dell'animale presente nella cella, con strumento ed esca indicati.
+     * Non consuma nulla.
+     *
+     * @return la probabilità, o vuoto se nella cella non c'è un animale
+     */
+    public OptionalDouble anteprimaProbabilita(StrumentoCattura strumento, Cibo esca) {
+        Objects.requireNonNull(strumento, "strumento");
+        Objects.requireNonNull(esca, "esca");
+        Optional<Animale> presente = animaleQui();
+        if (presente.isEmpty()) {
+            return OptionalDouble.empty();
+        }
+        return OptionalDouble.of(engine.probabilita(presente.get(), strumento, esca));
     }
 
     public void salva() throws PersistenzaException {

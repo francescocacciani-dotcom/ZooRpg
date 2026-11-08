@@ -3,6 +3,7 @@ package it.unicam.cs.mpgc.rpg130131.controller;
 import it.unicam.cs.mpgc.rpg130131.model.animals.RegistroSpecie;
 import it.unicam.cs.mpgc.rpg130131.model.capture.CalcolatoreProbabilitaStandard;
 import it.unicam.cs.mpgc.rpg130131.model.capture.EngineCattura;
+import it.unicam.cs.mpgc.rpg130131.model.capture.RicompensaPerRarita;
 import it.unicam.cs.mpgc.rpg130131.model.catalog.Catalogo;
 import it.unicam.cs.mpgc.rpg130131.model.inventory.Inventario;
 import it.unicam.cs.mpgc.rpg130131.model.map.BiomaEnum;
@@ -70,8 +71,8 @@ public class GameFactory {
         EngineCattura engine = new EngineCattura(new CalcolatoreProbabilitaStandard(), random);
 
         GameController controller = new GameController(
-                mappa, giocatore, zooIniziale(), spawnManager, engine, repository,
-                configurazione.popolazione());
+                mappa, giocatore, zooIniziale(), spawnManager, engine,
+                new RicompensaPerRarita(catalogo), repository, configurazione.popolazione());
         controller.inizia();
         return controller;
     }

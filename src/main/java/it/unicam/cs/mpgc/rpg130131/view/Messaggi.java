@@ -7,9 +7,11 @@ import it.unicam.cs.mpgc.rpg130131.model.inventory.Cibo;
 import it.unicam.cs.mpgc.rpg130131.model.inventory.StrumentoCattura;
 import it.unicam.cs.mpgc.rpg130131.model.zoo.Recinto;
 import it.unicam.cs.mpgc.rpg130131.model.zoo.StatisticheZoo;
+import it.unicam.cs.mpgc.rpg130131.model.inventory.Oggetto;
 
 import java.util.Locale;
 import java.util.stream.Collectors;
+import java.util.Map;
 
 /** Tutti i testi mostrati al giocatore, in un unico posto. Non dipende da JavaFX. */
 public final class Messaggi {
@@ -35,9 +37,9 @@ public final class Messaggi {
                     "Lo zoo non ha un recinto libero adatto per %s.".formatted(animale(esito.animale()));
             case FALLITO -> "Tentativo fallito (%d%%): %s non si è lasciato catturare. Puoi riprovare."
                     .formatted(percentuale(esito.probabilita()), animale(esito.animale()));
-            case CATTURATO -> "Catturato! %s è nel tuo zoo (%d%%). «%s»"
+            case CATTURATO -> "Catturato! %s è nel tuo zoo (%d%%). «%s»%s"
                     .formatted(animale(esito.animale()), percentuale(esito.probabilita()),
-                            esito.animale().getVerso());
+                            esito.animale().getVerso(), ricompensa(esito.ricompensa()));
         };
     }
 
@@ -64,6 +66,29 @@ public final class Messaggi {
                 .collect(Collectors.joining(", "));
         return "Animali: %d/%d · Punteggio: %d\n%s".formatted(
                 statistiche.totaleAnimali(), statistiche.capienzaTotale(), statistiche.punteggio(), specie);
+    }
+
+    public static String anteprima(double probabilita) {
+        return "Probabilità di cattura: %d%%".formatted(percentuale(probabilita));
+    }
+
+    private static String ricompensa(Map<Oggetto, Integer> premio) {
+        if (premio.isEmpty()) {
+            return "";
+        }
+        return " Ricompensa: " + premio.entrySet().stream()
+                .map(e -> oggetto(e.getKey(), e.getValue()))
+                .collect(Collectors.joining(", ")) + ".";
+    }
+
+    private static String oggetto(Oggetto oggetto, int quantita) {
+        if (oggetto instanceof StrumentoCattura strumento) {
+            return strumento(strumento, quantita);
+        }
+        if (oggetto instanceof Cibo cibo) {
+            return cibo(cibo, quantita);
+        }
+        return "%s ×%d".formatted(oggetto.nome(), quantita);
     }
 
     private static int percentuale(double valore) {
