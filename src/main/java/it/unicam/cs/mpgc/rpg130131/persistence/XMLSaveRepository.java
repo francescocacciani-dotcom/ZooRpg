@@ -27,15 +27,43 @@ import java.util.UUID;
 import static it.unicam.cs.mpgc.rpg130131.persistence.UtilitaXML.figli;
 import static it.unicam.cs.mpgc.rpg130131.persistence.UtilitaXML.figlio;
 
-/** Salva e ricarica la partita in un file XML validato con {@code /save/partita.xsd}. */
+/**
+ * Implementazione concreta di {@link SaveRepository} che salva e carica la partita in un file XML.
+ *
+ * <p>Il salvataggio è validato rispetto allo schema XSD definito in {@code /save/partita.xsd}. Il formato XML
+ * include:</p>
+ * <ul>
+ *   <li><strong>giocatore</strong>: nome, posizione (x, y) e inventario completo</li>
+ *   <li><strong>zoo</strong>: nome dello zoo e lista di tutti i recinti contenenti animali</li>
+ * </ul>
+ *
+ * <p>Lo schema XSD garantisce la coerenza strutturale dei dati salvati, prevenendo corruzioni durante il salvataggio.</p>
+ *
+ * @see SaveRepository
+ * @see XMLCatalogReader
+ */
 public class XMLSaveRepository implements SaveRepository {
 
+    /** Percorso delle risorse dello schema XSD per validazione del file di salvataggio. */
     private static final String RISORSA_XSD = "/save/partita.xsd";
 
+    /** Percorso del file dove salvare il gioco. */
     private final Path file;
+
+    /** Registro delle specie usato per ricostruire gli animali durante il caricamento. */
     private final RegistroSpecie registro;
+
+    /** URL allo schema XSD per la validazione dei file di salvataggio. */
     private final URL schema;
 
+    /**
+     * Costruttore che inietta il percorso del file e il registro delle specie.
+     *
+     * @param file percorso assoluto del file XML dove salvare/caricare la partita
+     * @param registro registro delle specie per ricostruire gli animali dal loro tipo
+     * @throws IllegalStateException se lo schema XSD non è disponibile nel classpath
+     * @throws NullPointerException se file o registro sono null
+     */
     public XMLSaveRepository(Path file, RegistroSpecie registro) {
         this.file = Objects.requireNonNull(file, "file");
         this.registro = Objects.requireNonNull(registro, "registro");
@@ -46,6 +74,21 @@ public class XMLSaveRepository implements SaveRepository {
     }
 
     @Override
+    /**
+     * Salva lo stato corrente della partita nel file XML specificato.
+     *
+     * <p>La procedura di salvataggio:</p>
+     * <ol>
+     *   <li>Crea un nuovo documento XML vuoto</li>
+     *   <li>Serializza il giocatore con nome, posizione e inventario (strumenti e cibi)</li>
+     *   <li>Serializza lo zoo con tutti i recinti e gli animali contenuti</li>
+     *   <li>Scrive il documento XML su un file temporaneo (.tmp) per evitare corruzioni</li>
+     *   <li>Sposta il file temporaneo sul percorso finale</li>
+     * </ol>
+     *
+     * @param stato lo StatoPartita da salvare, contenente zoo e giocatore
+     * @throws PersistenzaException se la scrittura del file fallisce (errori I/O, directory non scrivibile, ecc.)
+     */
     public void salva(StatoPartita stato) throws PersistenzaException {
         Objects.requireNonNull(stato, "stato");
         Document documento = UtilitaXML.nuovoDocumento();
@@ -57,6 +100,23 @@ public class XMLSaveRepository implements SaveRepository {
     }
 
     @Override
+    /**
+     * Carica lo stato della partita da un file XML esistente.
+     *
+     * <p>Se il file non esiste ancora o la lettura fallisce, restituisce un Optional vuoto.</p>
+     *
+     * <p>La procedura di caricamento:</p>
+     * <ol>
+     *   <li>Controlla l'esistenza del file sul disco</li>
+     *   <li>Leggi e valida il file XML contro lo schema XSD</li>
+     *   <li>Estrae i dati del giocatore (posizione e inventario)</li>
+     *   <li>Estrae i dati dello zoo (recinti e animali)</li>
+     *   <li>Ricostruisce e restituisce un oggetto StatoPartita</li>
+     * </ol>
+     *
+     * @return un Optional contenente lo StatoPartita caricato, oppure Optional.empty() se il file non esiste
+     * @throws PersistenzaException se la lettura del file fallisce o i dati sono corrotti
+     */
     public Optional<StatoPartita> carica() throws PersistenzaException {
         if (!Files.exists(file)) {
             return Optional.empty();
@@ -73,8 +133,13 @@ public class XMLSaveRepository implements SaveRepository {
         }
     }
 
-    // ---------- scrittura ----------
-
+    /**
+     * Serializza il giocatore e il suo inventario in un elemento XML.
+     *
+     * @param documento il documento XML padre dove aggiungere l'elemento
+     * @param giocatore l'oggetto Giocatore da serializzare
+     * @return l'elemento XML "giocatore" creato, pronto per essere aggiunto al documento
+     */
     private static Element scriviGiocatore(Document documento, Giocatore giocatore) {
         Element elemento = documento.createElement("giocatore");
         elemento.setAttribute("nome", giocatore.getNome());
@@ -100,6 +165,13 @@ public class XMLSaveRepository implements SaveRepository {
         return elemento;
     }
 
+    /**
+     * Serializza lo zoo con tutti i recinti e gli animali in un elemento XML.
+     *
+     * @param documento il documento XML padre dove aggiungere l'elemento
+     * @param zoo l'oggetto Zoo da serializzare
+     * @return l'elemento XML "zoo" creato, pronto per essere aggiunto al documento
+     */
     private static Element scriviZoo(Document documento, Zoo zoo) {
         Element elementoZoo = documento.createElement("zoo");
         elementoZoo.setAttribute("nome", zoo.getNome());
@@ -122,8 +194,12 @@ public class XMLSaveRepository implements SaveRepository {
         return elementoZoo;
     }
 
-    // ---------- lettura ----------
-
+    /**
+     * Deserializza un oggetto Giocatore da un elemento XML.
+     *
+     * @param elemento l'elemento XML "giocatore" contenente i dati serializzati
+     * @return un oggetto Giocatore ricostruito dai dati XML
+     */
     private static Giocatore leggiGiocatore(Element elemento) {
         Inventario inventario = new Inventario();
         Element elementoInventario = figlio(elemento, "inventario");
@@ -143,6 +219,12 @@ public class XMLSaveRepository implements SaveRepository {
         return new Giocatore(elemento.getAttribute("nome"), posizione, inventario);
     }
 
+    /**
+     * Deserializza un oggetto Zoo da un elemento XML.
+     *
+     * @param elemento l'elemento XML "zoo" contenente i dati serializzati
+     * @return un oggetto Zoo ricostruito dai dati XML
+     */
     private Zoo leggiZoo(Element elemento) {
         Zoo zoo = new Zoo(elemento.getAttribute("nome"));
         for (Element elementoRecinto : figli(elemento, "recinto")) {
@@ -151,6 +233,12 @@ public class XMLSaveRepository implements SaveRepository {
         return zoo;
     }
 
+    /**
+     * Deserializza un oggetto Recinto con i suoi animali da un elemento XML.
+     *
+     * @param elemento l'elemento XML "recinto" contenente i dati serializzati
+     * @return un oggetto Recinto ricostruito dai dati XML, inclusi tutti gli animali
+     */
     private Recinto leggiRecinto(Element elemento) {
         Recinto recinto = new Recinto(
                 elemento.getAttribute("nome"),

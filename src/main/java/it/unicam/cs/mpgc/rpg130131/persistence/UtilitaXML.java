@@ -29,10 +29,33 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Operazioni XML comuni a lettore del catalogo e repository dello zoo. */
+/**
+ * Classe utility contenente operazioni XML comuni alla gestione della persistenza nel gioco.
+ *
+ * Fornisce metodi statici per:
+ * <ul>
+ *   <li>Creare e validare documenti XML rispetto a uno schema XSD</li>
+ *   <li>Scrivere documenti XML su file con salvataggio atomico (tramite file temporaneo)</li>
+ *   <li>Estrarre elementi figli da un documento XML in base al nome dell'etichetta</li>
+ * </ul>
+ *
+ * <p>Questa classe è utilizzata internamente da {@link XMLCatalogReader} e {@link XMLSaveRepository}.</p>
+ *
+ * <h3>Sicurezza del parsing XML</h3>
+ * Tutti i metodi di parsing disabilitano il processing sicuro:
+ * <ul>
+ *   <li>Disabilitano la processing delle doctype (previene XXE attacks)</li>
+ *   <li>Attivano {@code FEATURE_SECURE_PROCESSING} per limitare l'elaborazione di entità esterne</li>
+ * </ul>
+ */
 final class UtilitaXML {
 
-    /** Fa fallire il parsing al primo errore di validazione. */
+    /**
+     * ErrorHandler utilizzato durante il parsing XML per garantire la validità del documento.
+     *
+     * Fa fallire immediatamente il parsing quando si verificano errori o fatalità, mentre gli avvisi
+     * non interrompono il processo di parsing (consentono al documento di essere letto anche con alcuni warning).
+     */
     private static final ErrorHandler RIGOROSO = new ErrorHandler() {
         @Override
         public void warning(SAXParseException e) {
@@ -53,7 +76,14 @@ final class UtilitaXML {
     private UtilitaXML() {
     }
 
-    /** Legge e valida un documento rispetto allo schema XSD indicato. */
+    /**
+     * Legge un documento XML da uno stream e lo valida rispetto allo schema XSD specificato.
+     *
+     * @param flusso lo stream contenente il documento XML da leggere
+     * @param schemaUrl URL dello schema XSD da utilizzare per la validazione
+     * @return il documento XML parseato e validato
+     * @throws PersistenzaException se il file non può essere letto o non è valido secondo lo schema
+     */
     static Document leggi(InputStream flusso, URL schemaUrl) throws PersistenzaException {
         try {
             SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
@@ -75,6 +105,12 @@ final class UtilitaXML {
         }
     }
 
+    /**
+     * Crea un nuovo documento XML vuoto pronto per essere popolato con elementi e attributi.
+     *
+     * @return un nuovo documento XML vuoto creato dal parser
+     * @throws PersistenzaException se il parser non può inizializzare il documento
+     */
     static Document nuovoDocumento() throws PersistenzaException {
         try {
             return DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
@@ -83,7 +119,17 @@ final class UtilitaXML {
         }
     }
 
-    /** Scrive il documento su file in modo sicuro: prima un file temporaneo, poi lo sostituisce. */
+    /**
+     * Scrive un documento XML su un file, utilizzando una strategia di scrittura sicura
+     * che prima scrive in un file temporaneo (.tmp) e poi sposta il file finale per
+     * evitare la corruzione dei dati in caso di interruzioni.
+     *
+     * <p>Il file risultante è formattato con indentazione a 2 spazi.</p>
+     *
+     * @param documento il documento XML da scrivere
+     * @param file il percorso del file dove salvare il documento
+     * @throws PersistenzaException se la scrittura fallisce (errori I/O, directory non scrivibile, ecc.)
+     */
     static void scrivi(Document documento, Path file) throws PersistenzaException {
         Path temporaneo = file.resolveSibling(file.getFileName() + ".tmp");
         try {
@@ -105,7 +151,18 @@ final class UtilitaXML {
         }
     }
 
-    /** @return i soli figli diretti con il nome indicato, nell'ordine del documento */
+    /**
+     * Esegue una ricerca di tutti gli elementi figli del nodo specificato che hanno
+     * il nome dell'etichetta desiderato.
+     *
+     * <p>Il metodo controlla ogni nodo figlio diretto (non discendenti) e restituisce
+     * solo quelli che sono Element con un tagName corrispondente.</p>
+     *
+     * @param genitore il nodo padre da cui cercare i figli
+     * @param nome il nome dell'etichetta che gli elementi restituiti devono avere
+     * @return una lista contenente tutti gli elementi figlio con il nome specificato,
+     *         nell'ordine in cui appaiono nel documento XML (potrebbe restituire una lista vuota)
+     */
     static List<Element> figli(Element genitore, String nome) {
         List<Element> risultato = new ArrayList<>();
         for (Node nodo = genitore.getFirstChild(); nodo != null; nodo = nodo.getNextSibling()) {
@@ -116,7 +173,16 @@ final class UtilitaXML {
         return risultato;
     }
 
-    /** @return il primo figlio con il nome indicato (lo schema ne garantisce la presenza) */
+    /**
+     * Restituisce il primo elemento figlio del nodo specificato che ha il nome dell'etichetta desiderato.
+     *
+     * <p>Il metodo assume che lo schema XSD garantisca la presenza di questo elemento, quindi
+     * restituirà null o sollevare un'eccezione se non viene trovato alcun elemento corrispondente.</p>
+     *
+     * @param genitore il nodo padre da cui cercare il figlio
+     * @param nome il nome dell'etichetta che l'elemento restituito deve avere
+     * @return il primo elemento figlio con il nome specificato
+     */
     static Element figlio(Element genitore, String nome) {
         return figli(genitore, nome).getFirst();
     }
