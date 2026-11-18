@@ -13,7 +13,7 @@ public class Recinto {
 
     private final String nome;
     private final BiomaEnum bioma;
-    private final int capienza;
+    private int capienza;
     private final List<Animale> animali = new ArrayList<>();
 
     /**
@@ -42,6 +42,18 @@ public class Recinto {
 
     public int getCapienza() {
         return capienza;
+    }
+
+    /** Aumenta la capacità del recinto
+     *  @throws IllegalArgumentException se i posti non sono positivi
+     */
+
+    public void amplia(int posti){
+        if(posti<=0){
+            throw new IllegalArgumentException("I posti da aggiungere devono essere positivi: "+ posti);
+        }
+
+        capienza += posti;
     }
 
     public int getPostiLiberi() {
