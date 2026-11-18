@@ -5,11 +5,24 @@ import it.unicam.cs.mpgc.rpg130131.model.map.BiomaEnum;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * Un esemplare di animale. Contiene i dati comuni a tutte le specie; ogni sottoclasse
+ * definisce solo le caratteristiche proprie della specie.
+ * L'identità è data dall'id univoco; la vita è l'unica parte modificabile.
+ * La condizione ({@link StatoAnimale}) è derivata dalla vita.
+ */
 public abstract class Animale {
+
+    public static final int VITA_MASSIMA = 100;
+    /** Sotto questa soglia di vita l'animale è in pericolo. */
+    public static final int SOGLIA_PERICOLO = 50;
+
+    private static final int VITA_INIZIALE_IN_PERICOLO = 30;
+
     private final UUID id;
     private final String nome;
     private final RaritaEnum rarita;
-    private final StatoAnimale stato;
+    private int vita;
 
     protected Animale(String nome, RaritaEnum rarita, StatoAnimale stato) {
         this(UUID.randomUUID(), nome, rarita, stato);
@@ -20,7 +33,9 @@ public abstract class Animale {
         this.id = Objects.requireNonNull(id, "id");
         this.nome = requireNonBlank(nome);
         this.rarita = Objects.requireNonNull(rarita, "rarita");
-        this.stato = Objects.requireNonNull(stato, "stato");
+        this.vita = Objects.requireNonNull(stato, "stato") == StatoAnimale.IN_PERICOLO
+                ? VITA_INIZIALE_IN_PERICOLO
+                : VITA_MASSIMA;
     }
 
     private static String requireNonBlank(String nome) {
@@ -55,8 +70,38 @@ public abstract class Animale {
         return rarita;
     }
 
+    public int getVita() {
+        return vita;
+    }
+
+    /** @return IN_PERICOLO se la vita è sotto {@link #SOGLIA_PERICOLO}, altrimenti SELVATICO */
     public StatoAnimale getStato() {
-        return stato;
+        return vita < SOGLIA_PERICOLO ? StatoAnimale.IN_PERICOLO : StatoAnimale.SELVATICO;
+    }
+
+    /**
+     * @throws IllegalArgumentException se la vita non è in [0, {@link #VITA_MASSIMA}]
+     */
+    public void impostaVita(int vita) {
+        if (vita < 0 || vita > VITA_MASSIMA) {
+            throw new IllegalArgumentException("La vita deve essere in [0, %d]: %d".formatted(VITA_MASSIMA, vita));
+        }
+        this.vita = vita;
+    }
+
+    /**
+     * Aggiunge punti di vita, senza superare il massimo.
+     *
+     * @return i punti effettivamente recuperati
+     * @throws IllegalArgumentException se i punti non sono positivi
+     */
+    public int cura(int punti) {
+        if (punti <= 0) {
+            throw new IllegalArgumentException("I punti di cura devono essere positivi: " + punti);
+        }
+        int prima = vita;
+        vita = Math.min(VITA_MASSIMA, vita + punti);
+        return vita - prima;
     }
 
     @Override
@@ -71,7 +116,6 @@ public abstract class Animale {
 
     @Override
     public String toString() {
-        return "%s \"%s\" [%s, %s]".formatted(getSpecie(), nome, rarita, stato);
+        return "%s \"%s\" [%s, vita %d]".formatted(getSpecie(), nome, rarita, vita);
     }
 }
-
