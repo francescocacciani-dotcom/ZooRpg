@@ -11,6 +11,7 @@ import it.unicam.cs.mpgc.rpg130131.model.map.GeneratoreMappa;
 import it.unicam.cs.mpgc.rpg130131.model.map.Mappa2D;
 import it.unicam.cs.mpgc.rpg130131.model.map.Posizione;
 import it.unicam.cs.mpgc.rpg130131.model.player.Giocatore;
+import it.unicam.cs.mpgc.rpg130131.model.shop.Negozio;
 import it.unicam.cs.mpgc.rpg130131.model.zoo.Recinto;
 import it.unicam.cs.mpgc.rpg130131.model.zoo.Zoo;
 import it.unicam.cs.mpgc.rpg130131.persistence.CatalogReader;
@@ -21,8 +22,8 @@ import java.util.Objects;
 import java.util.random.RandomGenerator;
 
 /**
- * Assembla una nuova partita: mappa, giocatore con il kit iniziale, zoo con un recinto per bioma,
- * gestore delle comparse e motore di cattura. Tutte le dipendenze arrivano dal costruttore.
+ * Assembla una nuova partita: mappa, giocatore con il kit iniziale del catalogo, zoo con un recinto
+ * per bioma, negozio, gestore delle comparse e motore di cattura. Le dipendenze arrivano dal costruttore.
  */
 public class GameFactory {
 
@@ -60,7 +61,8 @@ public class GameFactory {
         Catalogo catalogo = catalogReader.leggi();
         Mappa2D mappa = generatoreMappa.genera(configurazione.larghezza(), configurazione.altezza());
         Posizione centro = new Posizione(configurazione.larghezza() / 2, configurazione.altezza() / 2);
-        Giocatore giocatore = new Giocatore(nomeGiocatore, centro, kitIniziale(catalogo));
+        Giocatore giocatore = new Giocatore(
+                nomeGiocatore, centro, kitIniziale(catalogo), configurazione.moneteIniziali());
 
         SpawnManager spawnManager;
         try {
@@ -72,15 +74,15 @@ public class GameFactory {
 
         GameController controller = new GameController(
                 mappa, giocatore, zooIniziale(), spawnManager, engine,
-                new RicompensaPerRarita(catalogo), repository, configurazione.popolazione());
+                new RicompensaPerRarita(catalogo), new Negozio(catalogo.negozio()),
+                repository, configurazione.popolazione());
         controller.inizia();
         return controller;
     }
 
-    private Inventario kitIniziale(Catalogo catalogo) {
+    private static Inventario kitIniziale(Catalogo catalogo) {
         Inventario inventario = new Inventario();
-        catalogo.strumenti().forEach(s -> inventario.aggiungi(s, configurazione.quantitaStrumenti()));
-        catalogo.cibi().forEach(c -> inventario.aggiungi(c, configurazione.quantitaCibi()));
+        catalogo.kit().forEach(scorta -> inventario.aggiungi(scorta.oggetto(), scorta.quantita()));
         return inventario;
     }
 

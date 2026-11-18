@@ -30,6 +30,8 @@ public class SpawnManager {
 
     private static final int TENTATIVI_PER_ANIMALE = 10;
 
+    private static final int VITA_MINIMA_IN_PERICOLO = 10;
+
     private final Catalogo catalogo;
     private final RegistroSpecie registro;
     private final RandomGenerator random;
@@ -118,7 +120,13 @@ public class SpawnManager {
         StatoAnimale stato = random.nextDouble() < PROBABILITA_IN_PERICOLO
                 ? StatoAnimale.IN_PERICOLO
                 : StatoAnimale.SELVATICO;
-        return registro.crea(voce.specie(), nome, voce.rarita(), stato);
+        Animale animale = registro.crea(voce.specie(), nome, voce.rarita(), stato);
+        if (stato == StatoAnimale.IN_PERICOLO) {
+            // vita casuale tra VITA_MINIMA_IN_PERICOLO e SOGLIA_PERICOLO - 1
+            animale.impostaVita(VITA_MINIMA_IN_PERICOLO
+                    + random.nextInt(Animale.SOGLIA_PERICOLO - VITA_MINIMA_IN_PERICOLO));
+        }
+        return animale;
     }
 
     private Optional<Posizione> scegliCellaLibera(Mappa2D mappa, BiomaEnum bioma) {

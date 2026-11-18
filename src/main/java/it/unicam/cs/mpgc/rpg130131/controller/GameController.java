@@ -13,6 +13,12 @@ import it.unicam.cs.mpgc.rpg130131.model.map.Direzione;
 import it.unicam.cs.mpgc.rpg130131.model.map.Mappa2D;
 import it.unicam.cs.mpgc.rpg130131.model.map.Posizione;
 import it.unicam.cs.mpgc.rpg130131.model.player.Giocatore;
+import it.unicam.cs.mpgc.rpg130131.model.shop.EsitoAcquisto;
+import it.unicam.cs.mpgc.rpg130131.model.shop.Negozio;
+import it.unicam.cs.mpgc.rpg130131.model.shop.VoceNegozio;
+import it.unicam.cs.mpgc.rpg130131.model.zoo.EsitoCura;
+import it.unicam.cs.mpgc.rpg130131.model.zoo.Recinto;
+import it.unicam.cs.mpgc.rpg130131.model.zoo.RisultatoCura;
 import it.unicam.cs.mpgc.rpg130131.model.zoo.Zoo;
 import it.unicam.cs.mpgc.rpg130131.persistence.PersistenzaException;
 import it.unicam.cs.mpgc.rpg130131.persistence.SaveRepository;
@@ -24,7 +30,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 
 /**
- * Coordina una partita: muove il giocatore, gestisce i tentativi di cattura e il salvataggio.
+ * Coordina una partita: movimento, cattura, rilascio, cure, acquisti e salvataggio.
  * Non contiene regole di calcolo né formattazione di messaggi: delega al modello e alla vista.
  */
 public class GameController {
@@ -32,11 +38,12 @@ public class GameController {
     private final Mappa2D mappa;
     private final SpawnManager spawnManager;
     private final EngineCattura engine;
+    private final PoliticaRicompensa ricompensa;
+    private final Negozio negozio;
     private final SaveRepository repository;
     private final int popolazioneObiettivo;
     private Giocatore giocatore;
     private Zoo zoo;
-    private final PoliticaRicompensa ricompensa;
 
     /**
      * @param popolazioneObiettivo numero di animali che il gioco cerca di mantenere sulla mappa
@@ -48,6 +55,7 @@ public class GameController {
                           SpawnManager spawnManager,
                           EngineCattura engine,
                           PoliticaRicompensa ricompensa,
+                          Negozio negozio,
                           SaveRepository repository,
                           int popolazioneObiettivo) {
         this.mappa = Objects.requireNonNull(mappa, "mappa");
@@ -56,6 +64,7 @@ public class GameController {
         this.spawnManager = Objects.requireNonNull(spawnManager, "spawnManager");
         this.engine = Objects.requireNonNull(engine, "engine");
         this.ricompensa = Objects.requireNonNull(ricompensa, "ricompensa");
+        this.negozio = Objects.requireNonNull(negozio, "negozio");
         this.repository = Objects.requireNonNull(repository, "repository");
         if (popolazioneObiettivo < 0) {
             throw new IllegalArgumentException("L'obiettivo non può essere negativo: " + popolazioneObiettivo);
@@ -90,6 +99,7 @@ public class GameController {
     /**
      * Tenta di catturare l'animale nella cella del giocatore. Strumento ed esca vengono
      * consumati solo se il tentativo viene effettuato; se fallisce l'animale resta dov'è.
+     * Se riesce, il giocatore riceve la ricompensa prevista dalla {@link PoliticaRicompensa}.
      */
     public EsitoTentativo tentaCattura(StrumentoCattura strumento, Cibo esca) {
         Objects.requireNonNull(strumento, "strumento");
@@ -123,7 +133,6 @@ public class GameController {
         }
 
         spawnManager.rimuovi(giocatore.getPosizione());
-        spawnManager.rimuovi(giocatore.getPosizione());
         zoo.accogli(animale);
         Map<Oggetto, Integer> premio = ricompensa.perCattura(animale);
         premio.forEach(inventario::aggiungi);
@@ -145,6 +154,60 @@ public class GameController {
             return OptionalDouble.empty();
         }
         return OptionalDouble.of(engine.probabilita(presente.get(), strumento, esca));
+    }
+
+    /**
+     * Rilascia un animale dello zoo: lo toglie dal recinto e dà al giocatore le monete previste
+     * dalla sua rarità.
+     *
+     * @return le monete ricevute
+     * @throws IllegalArgumentException se l'animale non è nello zoo
+     */
+    public int rilascia(Animale animale) {
+        Objects.requireNonNull(animale, "animale");
+        if (!zoo.rilascia(animale)) {
+            throw new IllegalArgumentException("L'animale non è nello zoo: " + animale);
+        }
+        int monete = animale.getRarita().getMoneteRilascio();
+        giocatore.aggiungiMonete(monete);
+        return monete;
+    }
+
+    /**
+     * Cura un animale dello zoo con un oggetto dell'inventario. L'oggetto viene consumato
+     * solo se la cura riesce.
+     *
+     * @throws IllegalArgumentException se l'animale non è nello zoo
+     */
+    public RisultatoCura cura(Animale animale, Oggetto curativo) {
+        Objects.requireNonNull(curativo, "curativo");
+        Inventario inventario = giocatore.getInventario();
+        if (!inventario.contiene(curativo)) {
+            return new RisultatoCura(EsitoCura.NON_POSSEDUTO, 0);
+        }
+        RisultatoCura risultato = zoo.cura(animale, curativo);
+        if (risultato.esito() == EsitoCura.CURATO) {
+            inventario.usa(curativo);
+        }
+        return risultato;
+    }
+
+    /** Compra una unità di un articolo del negozio. */
+    public EsitoAcquisto compra(VoceNegozio articolo) {
+        return negozio.compra(giocatore, articolo);
+    }
+
+    /**
+     * Compra l'ampliamento di un recinto dello zoo.
+     *
+     * @throws IllegalArgumentException se il recinto non appartiene allo zoo
+     */
+    public EsitoAcquisto ampliaRecinto(Recinto recinto) {
+        Objects.requireNonNull(recinto, "recinto");
+        if (!zoo.getRecinti().contains(recinto)) {
+            throw new IllegalArgumentException("Il recinto non appartiene allo zoo: " + recinto.getNome());
+        }
+        return negozio.ampliaRecinto(giocatore, recinto);
     }
 
     public void salva() throws PersistenzaException {
@@ -183,6 +246,10 @@ public class GameController {
 
     public Zoo getZoo() {
         return zoo;
+    }
+
+    public Negozio getNegozio() {
+        return negozio;
     }
 
     /** @return vista non modificabile degli animali presenti sulla mappa */
