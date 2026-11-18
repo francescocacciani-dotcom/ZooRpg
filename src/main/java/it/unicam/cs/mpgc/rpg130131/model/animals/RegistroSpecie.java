@@ -86,4 +86,15 @@ public class RegistroSpecie {
         }
         return animale;
     }
+
+    /**
+     * Ricostruisce un esemplare salvato, ripristinandone la vita.
+     *
+     * @throws IllegalArgumentException se la specie non è registrata o la vita non è valida
+     */
+    public Animale ricostruisci(String specie, UUID id, String nome, RaritaEnum rarita, int vita) {
+        Animale animale = ricostruisci(specie, id, nome, rarita, StatoAnimale.SELVATICO);
+        animale.impostaVita(vita);
+        return animale;
+    }
 }
