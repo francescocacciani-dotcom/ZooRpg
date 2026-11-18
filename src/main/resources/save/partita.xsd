@@ -20,6 +20,13 @@
         </xs:restriction>
     </xs:simpleType>
 
+    <xs:simpleType name="Punti">
+        <xs:restriction base="xs:int">
+            <xs:minInclusive value="0"/>
+            <xs:maxInclusive value="100"/>
+        </xs:restriction>
+    </xs:simpleType>
+
     <xs:simpleType name="Bioma">
         <xs:restriction base="xs:string">
             <xs:enumeration value="SAVANA"/>
@@ -38,16 +45,22 @@
         </xs:restriction>
     </xs:simpleType>
 
-    <xs:simpleType name="Stato">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="SELVATICO"/>
-            <xs:enumeration value="IN_PERICOLO"/>
-        </xs:restriction>
-    </xs:simpleType>
-
-    <xs:complexType name="VoceInventario">
+    <xs:complexType name="VoceStrumento">
         <xs:attribute name="nome" type="Testo" use="required"/>
         <xs:attribute name="bonus" type="Bonus" use="required"/>
+        <xs:attribute name="quantita" type="xs:positiveInteger" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="VoceCibo">
+        <xs:attribute name="nome" type="Testo" use="required"/>
+        <xs:attribute name="bonus" type="Bonus" use="required"/>
+        <xs:attribute name="cura" type="Punti" use="required"/>
+        <xs:attribute name="quantita" type="xs:positiveInteger" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="VoceMedicina">
+        <xs:attribute name="nome" type="Testo" use="required"/>
+        <xs:attribute name="cura" type="Punti" use="required"/>
         <xs:attribute name="quantita" type="xs:positiveInteger" use="required"/>
     </xs:complexType>
 
@@ -61,9 +74,11 @@
                             <xs:element name="inventario">
                                 <xs:complexType>
                                     <xs:sequence>
-                                        <xs:element name="strumento" type="VoceInventario"
+                                        <xs:element name="strumento" type="VoceStrumento"
                                                     minOccurs="0" maxOccurs="unbounded"/>
-                                        <xs:element name="cibo" type="VoceInventario"
+                                        <xs:element name="cibo" type="VoceCibo"
+                                                    minOccurs="0" maxOccurs="unbounded"/>
+                                        <xs:element name="medicina" type="VoceMedicina"
                                                     minOccurs="0" maxOccurs="unbounded"/>
                                     </xs:sequence>
                                 </xs:complexType>
@@ -72,6 +87,7 @@
                         <xs:attribute name="nome" type="Testo" use="required"/>
                         <xs:attribute name="x" type="xs:int" use="required"/>
                         <xs:attribute name="y" type="xs:int" use="required"/>
+                        <xs:attribute name="monete" type="xs:nonNegativeInteger" use="required"/>
                     </xs:complexType>
                 </xs:element>
 
@@ -87,7 +103,7 @@
                                                 <xs:attribute name="specie" type="Testo" use="required"/>
                                                 <xs:attribute name="nome" type="Testo" use="required"/>
                                                 <xs:attribute name="rarita" type="Rarita" use="required"/>
-                                                <xs:attribute name="stato" type="Stato" use="required"/>
+                                                <xs:attribute name="vita" type="Punti" use="required"/>
                                             </xs:complexType>
                                         </xs:element>
                                     </xs:sequence>

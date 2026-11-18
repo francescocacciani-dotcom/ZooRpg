@@ -23,6 +23,21 @@
         </xs:restriction>
     </xs:simpleType>
 
+    <xs:simpleType name="Punti">
+        <xs:restriction base="xs:int">
+            <xs:minInclusive value="0"/>
+            <xs:maxInclusive value="100"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="TipoOggetto">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="STRUMENTO"/>
+            <xs:enumeration value="CIBO"/>
+            <xs:enumeration value="MEDICINA"/>
+        </xs:restriction>
+    </xs:simpleType>
+
     <xs:element name="catalogo">
         <xs:complexType>
             <xs:sequence>
@@ -70,6 +85,48 @@
                                 <xs:complexType>
                                     <xs:attribute name="nome" type="Testo" use="required"/>
                                     <xs:attribute name="bonus" type="Bonus" use="required"/>
+                                    <xs:attribute name="cura" type="Punti" use="required"/>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+
+                <xs:element name="medicine">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="medicina" minOccurs="0" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:attribute name="nome" type="Testo" use="required"/>
+                                    <xs:attribute name="cura" type="Punti" use="required"/>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+
+                <xs:element name="negozio">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="articolo" minOccurs="0" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:attribute name="tipo" type="TipoOggetto" use="required"/>
+                                    <xs:attribute name="nome" type="Testo" use="required"/>
+                                    <xs:attribute name="prezzo" type="xs:positiveInteger" use="required"/>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+
+                <xs:element name="kit">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="voce" minOccurs="0" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:attribute name="tipo" type="TipoOggetto" use="required"/>
+                                    <xs:attribute name="nome" type="Testo" use="required"/>
+                                    <xs:attribute name="quantita" type="xs:positiveInteger" use="required"/>
                                 </xs:complexType>
                             </xs:element>
                         </xs:sequence>

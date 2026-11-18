@@ -4,7 +4,11 @@ import it.unicam.cs.mpgc.rpg130131.model.animals.RaritaEnum;
 import it.unicam.cs.mpgc.rpg130131.model.catalog.Catalogo;
 import it.unicam.cs.mpgc.rpg130131.model.catalog.VoceAnimale;
 import it.unicam.cs.mpgc.rpg130131.model.inventory.Cibo;
+import it.unicam.cs.mpgc.rpg130131.model.inventory.Medicina;
+import it.unicam.cs.mpgc.rpg130131.model.inventory.Oggetto;
+import it.unicam.cs.mpgc.rpg130131.model.inventory.Scorta;
 import it.unicam.cs.mpgc.rpg130131.model.inventory.StrumentoCattura;
+import it.unicam.cs.mpgc.rpg130131.model.shop.VoceNegozio;
 import org.w3c.dom.Element;
 
 import java.io.IOException;
@@ -16,54 +20,39 @@ import java.util.Objects;
 import static it.unicam.cs.mpgc.rpg130131.persistence.UtilitaXML.figli;
 import static it.unicam.cs.mpgc.rpg130131.persistence.UtilitaXML.figlio;
 
-/**
- * Implementazione concreta di {@link CatalogReader} che legge il catalogo da un file XML.
- *
- * <p>Questa classe carica il catalogo dal file resources {@code /catalog/animali.xml} e lo valida
- * rispetto allo schema XSD definito in {@code /catalog/animali.xsd}. Il catalogo contiene:</p>
- * <ul>
- *   <li>Animali: specie, rarità, peso e lista dei nomi alternativi</li>
- *   <li>Strumenti di cattura: nome e bonus per la cattura</li>
- *   <li>Cibi: nome e bonus come esca</li>
- * </ul>
- *
- * <p>Il metodo {@link #predefinito()} restituisce un'istanza pronta all'uso che punta alle risorse
- * dell'applicazione.</p>
- *
- * @see CatalogReader
- * @see it.unicam.cs.mpgc.rpg130131.model.catalog.Catalogo
- */
+/** Legge il catalogo da un documento XML validato con il suo schema XSD. */
 public class XMLCatalogReader implements CatalogReader {
 
-    /** Percorso delle risorse XML e XSD del catalogo all'interno della classe. */
     private static final String RISORSA_XML = "/catalog/animali.xml";
-    /** Percorso dello schema XSD per la validazione del catalogo. */
     private static final String RISORSA_XSD = "/catalog/animali.xsd";
 
-    /** URL al file XML contenente il catalogo. */
+    /** Gli oggetti definiti nel catalogo: servono a risolvere i riferimenti per nome di negozio e kit. */
+    private record Oggetti(List<StrumentoCattura> strumenti, List<Cibo> cibi, List<Medicina> medicine) {
+
+        Oggetto trova(String tipo, String nome) {
+            List<? extends Oggetto> candidati = switch (tipo) {
+                case "STRUMENTO" -> strumenti;
+                case "CIBO" -> cibi;
+                case "MEDICINA" -> medicine;
+                default -> throw new IllegalArgumentException("Tipo di oggetto sconosciuto: " + tipo);
+            };
+            return candidati.stream()
+                    .filter(oggetto -> oggetto.nome().equals(nome))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Oggetto non definito nel catalogo: %s \"%s\"".formatted(tipo, nome)));
+        }
+    }
+
     private final URL documento;
-    /** URL allo schema XSD per la validazione del catalogo. */
     private final URL schema;
 
-    /**
-     * Costruttore che inietta le risorse XML e XSD necessarie per leggere il catalogo.
-     *
-     * @param documento URL al file XML contenente i dati del catalogo
-     * @param schema URL allo schema XSD per validare il documento XML
-     * @throws IllegalArgumentException se uno dei parametri è null
-     */
     public XMLCatalogReader(URL documento, URL schema) {
         this.documento = Objects.requireNonNull(documento, "documento");
         this.schema = Objects.requireNonNull(schema, "schema");
     }
 
-    /**
-     * Restituisce un'istanza preconfigurata di {@link XMLCatalogReader} che punta alle risorse
-     * incorporate dell'applicazione (/catalog/animali.xml e /catalog/animali.xsd).
-     *
-     * @return un lettore del catalogo pronto all'uso, configurato per leggere dalle risorse dell'applicazione
-     * @throws IllegalStateException se le risorse del catalogo non sono disponibili nel classpath
-     */
+    /** @return un lettore del catalogo incluso nelle risorse dell'applicazione */
     public static XMLCatalogReader predefinito() {
         URL xml = XMLCatalogReader.class.getResource(RISORSA_XML);
         URL xsd = XMLCatalogReader.class.getResource(RISORSA_XSD);
@@ -74,25 +63,17 @@ public class XMLCatalogReader implements CatalogReader {
     }
 
     @Override
-    /**
-     * Legge il file XML del catalogo e restituisce un oggetto {@link Catalogo} popolato.
-     *
-     * <p>Il metodo apre lo stream alle risorse dell'applicazione, valida il documento contro
-     * lo schema XSD e costruisce l'oggetto catalogo contenente tutte le informazioni sugli animali,
-     * gli strumenti di cattura e i cibi.</p>
-     *
-     * @return un oggetto Catalogo contenente:
-     *   <ul>
-     *     <li>La lista degli animali con specie, rarità, peso e nomi</li>
-     *     <li>La lista degli strumenti di cattura con nome e bonus</li>
-     *     <li>La lista dei cibi con nome e bonus esca</li>
-     *   </ul>
-     * @throws PersistenzaException se il file non può essere aperto o contiene dati non validi secondo lo schema
-     */
     public Catalogo leggi() throws PersistenzaException {
         try (InputStream flusso = documento.openStream()) {
             Element radice = UtilitaXML.leggi(flusso, schema).getDocumentElement();
-            return new Catalogo(animali(radice), strumenti(radice), cibi(radice));
+            Oggetti oggetti = new Oggetti(strumenti(radice), cibi(radice), medicine(radice));
+            return new Catalogo(
+                    animali(radice),
+                    oggetti.strumenti(),
+                    oggetti.cibi(),
+                    oggetti.medicine(),
+                    negozio(radice, oggetti),
+                    kit(radice, oggetti));
         } catch (IOException e) {
             throw new PersistenzaException("Impossibile leggere " + documento, e);
         } catch (IllegalArgumentException e) {
@@ -100,12 +81,6 @@ public class XMLCatalogReader implements CatalogReader {
         }
     }
 
-    /**
-     * Estrarre gli animali dal documento XML radice.
-     *
-     * @param radice elemento root del documento XML
-     * @return lista degli oggetti VoceAnimale estratti dagli elementi XML
-     */
     private static List<VoceAnimale> animali(Element radice) {
         return figli(figlio(radice, "animali"), "animale").stream()
                 .map(e -> new VoceAnimale(
@@ -118,12 +93,6 @@ public class XMLCatalogReader implements CatalogReader {
                 .toList();
     }
 
-    /**
-     * Estrarre gli strumenti di cattura dal documento XML radice.
-     *
-     * @param radice elemento root del documento XML
-     * @return lista degli oggetti StrumentoCattura estratti dagli elementi XML
-     */
     private static List<StrumentoCattura> strumenti(Element radice) {
         return figli(figlio(radice, "strumenti"), "strumento").stream()
                 .map(e -> new StrumentoCattura(
@@ -132,17 +101,36 @@ public class XMLCatalogReader implements CatalogReader {
                 .toList();
     }
 
-    /**
-     * Estrarre i cibi dal documento XML radice.
-     *
-     * @param radice elemento root del documento XML
-     * @return lista degli oggetti Cibo estratti dagli elementi XML
-     */
     private static List<Cibo> cibi(Element radice) {
         return figli(figlio(radice, "cibi"), "cibo").stream()
                 .map(e -> new Cibo(
                         e.getAttribute("nome"),
-                        Double.parseDouble(e.getAttribute("bonus"))))
+                        Double.parseDouble(e.getAttribute("bonus")),
+                        Integer.parseInt(e.getAttribute("cura"))))
+                .toList();
+    }
+
+    private static List<Medicina> medicine(Element radice) {
+        return figli(figlio(radice, "medicine"), "medicina").stream()
+                .map(e -> new Medicina(
+                        e.getAttribute("nome"),
+                        Integer.parseInt(e.getAttribute("cura"))))
+                .toList();
+    }
+
+    private static List<VoceNegozio> negozio(Element radice, Oggetti oggetti) {
+        return figli(figlio(radice, "negozio"), "articolo").stream()
+                .map(e -> new VoceNegozio(
+                        oggetti.trova(e.getAttribute("tipo"), e.getAttribute("nome")),
+                        Integer.parseInt(e.getAttribute("prezzo"))))
+                .toList();
+    }
+
+    private static List<Scorta> kit(Element radice, Oggetti oggetti) {
+        return figli(figlio(radice, "kit"), "voce").stream()
+                .map(e -> new Scorta(
+                        oggetti.trova(e.getAttribute("tipo"), e.getAttribute("nome")),
+                        Integer.parseInt(e.getAttribute("quantita"))))
                 .toList();
     }
 }

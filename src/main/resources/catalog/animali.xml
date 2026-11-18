@@ -48,9 +48,36 @@
         <strumento nome="Tranquillante" bonus="0.30"/>
     </strumenti>
 
+    <!-- bonus = aiuto nella cattura; cura = punti vita (solo se la vita dell'animale è sopra 80) -->
     <cibi>
-        <cibo nome="Frutta" bonus="0.05"/>
-        <cibo nome="Carne" bonus="0.10"/>
-        <cibo nome="Banchetto" bonus="0.20"/>
+        <cibo nome="Frutta" bonus="0.05" cura="3"/>
+        <cibo nome="Carne" bonus="0.10" cura="8"/>
+        <cibo nome="Banchetto" bonus="0.20" cura="15"/>
     </cibi>
+
+    <medicine>
+        <medicina nome="Antidolorifico" cura="5"/>
+        <medicina nome="Antibiotico" cura="15"/>
+        <medicina nome="Cicatrizzante" cura="30"/>
+        <medicina nome="Siero" cura="60"/>
+    </medicine>
+
+    <negozio>
+        <articolo tipo="STRUMENTO" nome="Rete" prezzo="10"/>
+        <articolo tipo="STRUMENTO" nome="Trappola" prezzo="35"/>
+        <articolo tipo="STRUMENTO" nome="Tranquillante" prezzo="80"/>
+        <articolo tipo="CIBO" nome="Frutta" prezzo="5"/>
+        <articolo tipo="CIBO" nome="Carne" prezzo="15"/>
+        <articolo tipo="CIBO" nome="Banchetto" prezzo="40"/>
+        <articolo tipo="MEDICINA" nome="Antidolorifico" prezzo="8"/>
+        <articolo tipo="MEDICINA" nome="Antibiotico" prezzo="20"/>
+        <articolo tipo="MEDICINA" nome="Cicatrizzante" prezzo="45"/>
+        <articolo tipo="MEDICINA" nome="Siero" prezzo="90"/>
+    </negozio>
+
+    <!-- dotazione iniziale del giocatore -->
+    <kit>
+        <voce tipo="STRUMENTO" nome="Rete" quantita="3"/>
+        <voce tipo="CIBO" nome="Frutta" quantita="3"/>
+    </kit>
 </catalogo>
