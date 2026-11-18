@@ -107,7 +107,6 @@ public class Zoo {
     }
 
     private static int puntiCura(Oggetto oggetto) {
-        //TODO controllare se viene passato o una medicina o un cibo altrimenti un throws
         return switch (oggetto) {
             case Medicina medicina -> medicina.puntiVita();
             case Cibo cibo -> cibo.puntiVita();
