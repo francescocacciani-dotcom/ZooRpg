@@ -3,12 +3,26 @@ package it.unicam.cs.mpgc.rpg130131.view;
 import it.unicam.cs.mpgc.rpg130131.controller.EsitoTentativo;
 import it.unicam.cs.mpgc.rpg130131.controller.GameController;
 import it.unicam.cs.mpgc.rpg130131.controller.GameFactory;
+import it.unicam.cs.mpgc.rpg130131.model.animals.Animale;
+import it.unicam.cs.mpgc.rpg130131.model.inventory.Cibo;
+import it.unicam.cs.mpgc.rpg130131.model.inventory.Inventario;
+import it.unicam.cs.mpgc.rpg130131.model.inventory.Medicina;
+import it.unicam.cs.mpgc.rpg130131.model.inventory.Oggetto;
 import it.unicam.cs.mpgc.rpg130131.model.inventory.StrumentoCattura;
 import it.unicam.cs.mpgc.rpg130131.model.map.Direzione;
+import it.unicam.cs.mpgc.rpg130131.model.shop.EsitoAcquisto;
+import it.unicam.cs.mpgc.rpg130131.model.shop.Negozio;
+import it.unicam.cs.mpgc.rpg130131.model.shop.VoceNegozio;
+import it.unicam.cs.mpgc.rpg130131.model.zoo.Recinto;
+import it.unicam.cs.mpgc.rpg130131.model.zoo.RisultatoCura;
 import it.unicam.cs.mpgc.rpg130131.persistence.PersistenzaException;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
@@ -20,8 +34,12 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -36,11 +54,13 @@ public class GamePane extends BorderPane {
     private final PannelloCattura pannelloCattura = new PannelloCattura();
     private final InventarioView inventarioView = new InventarioView();
     private final ZooView zooView = new ZooView();
+    private final NegozioView negozioView = new NegozioView();
     private final LogView logView = new LogView();
     private final List<VistaAggiornabile> viste =
-            List.of(mappaView, pannelloCattura, inventarioView, zooView);
+            List.of(mappaView, pannelloCattura, inventarioView, zooView, negozioView);
 
     private GameController controller;
+    private Stage finestraNegozio;
 
     public GamePane(GameFactory factory) {
         this.factory = Objects.requireNonNull(factory, "factory");
@@ -48,9 +68,13 @@ public class GamePane extends BorderPane {
         StackPane centro = new StackPane(mappaView);
         centro.setPadding(new Insets(10));
 
-        VBox laterale = new VBox(10, pannelloCattura, inventarioView, zooView);
+        Button bottoneNegozio = new Button("Negozio (Ctrl+B)");
+        bottoneNegozio.setMaxWidth(Double.MAX_VALUE);
+        bottoneNegozio.setOnAction(e -> apriNegozio());
+
+        VBox laterale = new VBox(10, bottoneNegozio, pannelloCattura, inventarioView, zooView);
         laterale.setPadding(new Insets(10));
-        laterale.setPrefWidth(310);
+        laterale.setPrefWidth(330);
 
         setTop(creaMenu());
         setCenter(centro);
@@ -58,6 +82,10 @@ public class GamePane extends BorderPane {
         setBottom(logView);
 
         pannelloCattura.setOnCattura(this::tentaCattura);
+        zooView.setOnRilascia(this::rilascia);
+        zooView.setOnCura(this::curaAnimale);
+        negozioView.setOnCompra(this::compra);
+        negozioView.setOnAmplia(this::amplia);
     }
 
     public boolean haPartita() {
@@ -106,6 +134,8 @@ public class GamePane extends BorderPane {
         };
     }
 
+    // ---------- azioni di gioco ----------
+
     private void tentaCattura() {
         if (controller == null) {
             return;
@@ -118,6 +148,81 @@ public class GamePane extends BorderPane {
         logView.aggiungi(Messaggi.esito(esito));
         aggiornaTutto();
     }
+
+    private void rilascia(Animale animale) {
+        Alert conferma = new Alert(Alert.AlertType.CONFIRMATION,
+                "Rilasciare %s?\nRiceverai %d monete.".formatted(
+                        Messaggi.animale(animale), animale.getRarita().getMoneteRilascio()),
+                ButtonType.OK, ButtonType.CANCEL);
+        conferma.setHeaderText("Rilascia animale");
+        if (conferma.showAndWait().filter(bottone -> bottone == ButtonType.OK).isEmpty()) {
+            return;
+        }
+        int monete = controller.rilascia(animale);
+        logView.aggiungi(Messaggi.rilascio(animale, monete));
+        aggiornaTutto();
+    }
+
+    private void curaAnimale(Animale animale) {
+        Inventario inventario = controller.getGiocatore().getInventario();
+        Map<String, Oggetto> scelte = new LinkedHashMap<>();
+        inventario.getContenutoDi(Medicina.class)
+                .forEach((medicina, quantita) -> scelte.put(Messaggi.oggetto(medicina, quantita), medicina));
+        inventario.getContenutoDi(Cibo.class)
+                .forEach((cibo, quantita) -> scelte.put(Messaggi.oggetto(cibo, quantita), cibo));
+        if (scelte.isEmpty()) {
+            logView.aggiungi("Non hai medicine né cibo: compra qualcosa nel Negozio.");
+            return;
+        }
+
+        ChoiceDialog<String> dialogo = new ChoiceDialog<>(scelte.keySet().iterator().next(), scelte.keySet());
+        dialogo.setTitle("Cura");
+        dialogo.setHeaderText("Cura " + Messaggi.animale(animale));
+        dialogo.setContentText("Usa:");
+        dialogo.showAndWait().map(scelte::get).ifPresent(curativo -> {
+            RisultatoCura risultato = controller.cura(animale, curativo);
+            logView.aggiungi(Messaggi.cura(animale, curativo, risultato));
+            aggiornaTutto();
+        });
+    }
+
+    // ---------- negozio ----------
+
+    private void apriNegozio() {
+        if (controller == null) {
+            return;
+        }
+        if (finestraNegozio == null) {
+            finestraNegozio = new Stage();
+            finestraNegozio.setTitle("Negozio");
+            finestraNegozio.initOwner(getScene().getWindow());
+            finestraNegozio.initModality(Modality.WINDOW_MODAL);
+            finestraNegozio.setScene(new Scene(negozioView, 440, 560));
+        }
+        negozioView.aggiorna(controller);
+        negozioView.mostraMessaggio("");
+        finestraNegozio.show();
+    }
+
+    private void compra(VoceNegozio articolo) {
+        EsitoAcquisto esito = controller.compra(articolo);
+        String testo = Messaggi.acquisto(esito, Messaggi.descrizione(articolo.oggetto()), articolo.prezzo());
+        logView.aggiungi(testo);
+        negozioView.mostraMessaggio(testo);
+        aggiornaTutto();
+    }
+
+    private void amplia(Recinto recinto) {
+        int prezzo = controller.getNegozio().prezzoAmpliamento(recinto);
+        EsitoAcquisto esito = controller.ampliaRecinto(recinto);
+        String cosa = "+%d posti in %s".formatted(Negozio.POSTI_PER_AMPLIAMENTO, recinto.getNome());
+        String testo = Messaggi.acquisto(esito, cosa, prezzo);
+        logView.aggiungi(testo);
+        negozioView.mostraMessaggio(testo);
+        aggiornaTutto();
+    }
+
+    // ---------- salvataggio e menu ----------
 
     private void salva() {
         if (controller == null) {
@@ -167,6 +272,10 @@ public class GamePane extends BorderPane {
         nuova.setAccelerator(KeyCombination.keyCombination("Shortcut+N"));
         nuova.setOnAction(e -> chiediNomeENuovaPartita());
 
+        MenuItem negozio = new MenuItem("Negozio");
+        negozio.setAccelerator(KeyCombination.keyCombination("Shortcut+B"));
+        negozio.setOnAction(e -> apriNegozio());
+
         MenuItem salva = new MenuItem("Salva");
         salva.setAccelerator(KeyCombination.keyCombination("Shortcut+S"));
         salva.setOnAction(e -> salva());
@@ -179,7 +288,7 @@ public class GamePane extends BorderPane {
         esci.setOnAction(e -> Platform.exit());
 
         return new MenuBar(new Menu("Partita", null,
-                nuova, new SeparatorMenuItem(), salva, carica, new SeparatorMenuItem(), esci));
+                nuova, negozio, new SeparatorMenuItem(), salva, carica, new SeparatorMenuItem(), esci));
     }
 
     private static void mostraErrore(String titolo, Exception errore) {
