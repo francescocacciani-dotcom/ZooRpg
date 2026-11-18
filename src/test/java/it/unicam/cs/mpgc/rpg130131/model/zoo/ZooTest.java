@@ -1,6 +1,9 @@
 package it.unicam.cs.mpgc.rpg130131.model.zoo;
 
 import it.unicam.cs.mpgc.rpg130131.model.animals.*;
+import it.unicam.cs.mpgc.rpg130131.model.inventory.Cibo;
+import it.unicam.cs.mpgc.rpg130131.model.inventory.Medicina;
+import it.unicam.cs.mpgc.rpg130131.model.inventory.StrumentoCattura;
 import it.unicam.cs.mpgc.rpg130131.model.map.BiomaEnum;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -92,5 +95,79 @@ class ZooTest {
     void listeEsposteNonModificabili() {
         assertThrows(UnsupportedOperationException.class, () -> zoo.getRecinti().clear());
         assertThrows(UnsupportedOperationException.class, () -> savana.getAnimali().clear());
+    }
+
+    @Test
+    void rilasciaLiberaIlPosto() {
+        Animale leone = new Leone("Simba", RaritaEnum.RARO, StatoAnimale.SELVATICO);
+        zoo.accogli(leone);
+
+        assertTrue(zoo.rilascia(leone));
+
+        assertEquals(3, savana.getPostiLiberi());
+        assertFalse(zoo.rilascia(leone));
+    }
+
+    @Test
+    void laMedicinaCuraEdELimitataAllaVitaMassima() {
+        Animale leone = new Leone("Simba", RaritaEnum.RARO, StatoAnimale.SELVATICO);
+        zoo.accogli(leone);
+        leone.impostaVita(20);
+
+        RisultatoCura risultato = zoo.cura(leone, new Medicina("Antibiotico", 15));
+        assertEquals(EsitoCura.CURATO, risultato.esito());
+        assertEquals(15, risultato.puntiRecuperati());
+        assertEquals(35, leone.getVita());
+
+        leone.impostaVita(95);
+        assertEquals(5, zoo.cura(leone, new Medicina("Antibiotico", 15)).puntiRecuperati());
+        assertEquals(Animale.VITA_MASSIMA, leone.getVita());
+    }
+
+    @Test
+    void ilCiboCuraSoloSopraLaSoglia() {
+        Animale leone = new Leone("Simba", RaritaEnum.RARO, StatoAnimale.SELVATICO);
+        zoo.accogli(leone);
+        Cibo frutta = new Cibo("Frutta", 0.05, 3);
+
+        leone.impostaVita(Zoo.VITA_MINIMA_PER_CIBO);
+        assertEquals(EsitoCura.CIBO_NON_ADATTO, zoo.cura(leone, frutta).esito());
+        assertEquals(Zoo.VITA_MINIMA_PER_CIBO, leone.getVita());
+
+        leone.impostaVita(Zoo.VITA_MINIMA_PER_CIBO + 1);
+        assertEquals(EsitoCura.CURATO, zoo.cura(leone, frutta).esito());
+        assertEquals(Zoo.VITA_MINIMA_PER_CIBO + 4, leone.getVita());
+    }
+
+    @Test
+    void unAnimaleSanoNonHaBisognoDiCure() {
+        Animale leone = new Leone("Simba", RaritaEnum.RARO, StatoAnimale.SELVATICO);
+        zoo.accogli(leone);
+
+        assertEquals(EsitoCura.GIA_IN_SALUTE, zoo.cura(leone, new Medicina("Siero", 60)).esito());
+    }
+
+    @Test
+    void unOggettoNonCurativoNonCura() {
+        Animale leone = new Leone("Simba", RaritaEnum.RARO, StatoAnimale.IN_PERICOLO);
+        zoo.accogli(leone);
+
+        assertEquals(EsitoCura.NON_CURATIVO,
+                zoo.cura(leone, new StrumentoCattura("Rete", 0.1)).esito());
+        assertEquals(EsitoCura.NON_CURATIVO, zoo.cura(leone, new Cibo("Sasso", 0.0)).esito());
+    }
+
+    @Test
+    void curaUnAnimaleEsternoLanciaEccezione() {
+        Animale estraneo = new Leone("X", RaritaEnum.COMUNE, StatoAnimale.IN_PERICOLO);
+        assertThrows(IllegalArgumentException.class,
+                () -> zoo.cura(estraneo, new Medicina("Siero", 60)));
+    }
+
+    @Test
+    void ampliareUnRecintoAumentaLaCapienza() {
+        savana.amplia(2);
+        assertEquals(5, savana.getCapienza());
+        assertThrows(IllegalArgumentException.class, () -> savana.amplia(0));
     }
 }

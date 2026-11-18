@@ -44,4 +44,41 @@ class AnimaleTest {
             assertTrue(a.getDifficoltaBase() >= 0 && a.getDifficoltaBase() <= 1);
         }
     }
+
+    @Test
+    void laVitaInizialeDipendeDallaCondizione() {
+        assertEquals(Animale.VITA_MASSIMA,
+                new Leone("A", RaritaEnum.COMUNE, StatoAnimale.SELVATICO).getVita());
+        assertTrue(new Leone("B", RaritaEnum.COMUNE, StatoAnimale.IN_PERICOLO).getVita()
+                < Animale.SOGLIA_PERICOLO);
+    }
+
+    @Test
+    void sottoLaSogliaLAnimaleEInPericolo() {
+        Animale leone = new Leone("Simba", RaritaEnum.COMUNE, StatoAnimale.SELVATICO);
+
+        leone.impostaVita(Animale.SOGLIA_PERICOLO - 1);
+        assertEquals(StatoAnimale.IN_PERICOLO, leone.getStato());
+
+        leone.impostaVita(Animale.SOGLIA_PERICOLO);
+        assertEquals(StatoAnimale.SELVATICO, leone.getStato());
+    }
+
+    @Test
+    void curaRestituisceIPuntiEffettivamenteRecuperati() {
+        Animale leone = new Leone("Simba", RaritaEnum.COMUNE, StatoAnimale.SELVATICO);
+        leone.impostaVita(90);
+
+        assertEquals(10, leone.cura(25));
+        assertEquals(Animale.VITA_MASSIMA, leone.getVita());
+        assertEquals(0, leone.cura(5));
+    }
+
+    @Test
+    void vitaFuoriRangeRifiutata() {
+        Animale leone = new Leone("Simba", RaritaEnum.COMUNE, StatoAnimale.SELVATICO);
+        assertThrows(IllegalArgumentException.class, () -> leone.impostaVita(-1));
+        assertThrows(IllegalArgumentException.class, () -> leone.impostaVita(Animale.VITA_MASSIMA + 1));
+        assertThrows(IllegalArgumentException.class, () -> leone.cura(0));
+    }
 }

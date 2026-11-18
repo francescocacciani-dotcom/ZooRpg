@@ -46,13 +46,23 @@ class GameFactoryTest {
         assertEquals(configurazione.altezza(), controller.getMappa().getAltezza());
         assertEquals("Francesco", controller.getGiocatore().getNome());
         assertEquals(new Posizione(6, 4), controller.getGiocatore().getPosizione());
+        assertEquals(configurazione.moneteIniziali(), controller.getGiocatore().getMonete());
     }
 
     @Test
-    void ilGiocatoreParteConIlKit() throws Exception {
+    void ilGiocatoreParteConIlKitDelCatalogo() throws Exception {
         GameController controller = factory.nuovaPartita("Francesco");
 
         verificaKit(controller);
+    }
+
+    @Test
+    void ilNegozioVendeGliArticoliDelCatalogo() throws Exception {
+        GameController controller = factory.nuovaPartita("Francesco");
+        Catalogo catalogo = XMLCatalogReader.predefinito().leggi();
+
+        assertFalse(catalogo.negozio().isEmpty());
+        assertEquals(catalogo.negozio(), controller.getNegozio().getArticoli());
     }
 
     @Test
@@ -86,6 +96,7 @@ class GameFactoryTest {
 
         assertEquals("Francesco", controller.getGiocatore().getNome());
         assertEquals(posizione, controller.getGiocatore().getPosizione());
+        assertEquals(configurazione.moneteIniziali(), controller.getGiocatore().getMonete());
         verificaKit(controller);
     }
 
@@ -96,15 +107,15 @@ class GameFactoryTest {
 
     @Test
     void configurazioneNonValidaRifiutata() {
-        assertThrows(IllegalArgumentException.class, () -> new ConfigurazioneGioco(0, 8, 8, 3, 2, 4));
-        assertThrows(IllegalArgumentException.class, () -> new ConfigurazioneGioco(12, 8, 8, 3, 2, -1));
+        assertThrows(IllegalArgumentException.class, () -> new ConfigurazioneGioco(0, 8, 8, 4, 0));
+        assertThrows(IllegalArgumentException.class, () -> new ConfigurazioneGioco(12, 8, 8, -1, 0));
+        assertThrows(IllegalArgumentException.class, () -> new ConfigurazioneGioco(12, 8, 8, 4, -1));
     }
 
     private void verificaKit(GameController controller) throws Exception {
         Catalogo catalogo = XMLCatalogReader.predefinito().leggi();
-        catalogo.strumenti().forEach(s -> assertEquals(configurazione.quantitaStrumenti(),
-                controller.getGiocatore().getInventario().quantita(s)));
-        catalogo.cibi().forEach(c -> assertEquals(configurazione.quantitaCibi(),
-                controller.getGiocatore().getInventario().quantita(c)));
+        assertFalse(catalogo.kit().isEmpty());
+        catalogo.kit().forEach(scorta -> assertEquals(scorta.quantita(),
+                controller.getGiocatore().getInventario().quantita(scorta.oggetto())));
     }
 }

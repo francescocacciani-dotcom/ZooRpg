@@ -1,21 +1,26 @@
 package it.unicam.cs.mpgc.rpg130131.controller;
 
 import it.unicam.cs.mpgc.rpg130131.controller.EsitoTentativo.Tipo;
-import it.unicam.cs.mpgc.rpg130131.model.animals.RaritaEnum;
-import it.unicam.cs.mpgc.rpg130131.model.animals.RegistroSpecie;
+import it.unicam.cs.mpgc.rpg130131.model.animals.*;
 import it.unicam.cs.mpgc.rpg130131.model.capture.EngineCattura;
 import it.unicam.cs.mpgc.rpg130131.model.capture.PoliticaRicompensa;
 import it.unicam.cs.mpgc.rpg130131.model.catalog.Catalogo;
 import it.unicam.cs.mpgc.rpg130131.model.catalog.VoceAnimale;
 import it.unicam.cs.mpgc.rpg130131.model.inventory.Cibo;
 import it.unicam.cs.mpgc.rpg130131.model.inventory.Inventario;
+import it.unicam.cs.mpgc.rpg130131.model.inventory.Medicina;
 import it.unicam.cs.mpgc.rpg130131.model.inventory.StrumentoCattura;
 import it.unicam.cs.mpgc.rpg130131.model.map.BiomaEnum;
 import it.unicam.cs.mpgc.rpg130131.model.map.Direzione;
 import it.unicam.cs.mpgc.rpg130131.model.map.Mappa2D;
 import it.unicam.cs.mpgc.rpg130131.model.map.Posizione;
 import it.unicam.cs.mpgc.rpg130131.model.player.Giocatore;
+import it.unicam.cs.mpgc.rpg130131.model.shop.EsitoAcquisto;
+import it.unicam.cs.mpgc.rpg130131.model.shop.Negozio;
+import it.unicam.cs.mpgc.rpg130131.model.shop.VoceNegozio;
+import it.unicam.cs.mpgc.rpg130131.model.zoo.EsitoCura;
 import it.unicam.cs.mpgc.rpg130131.model.zoo.Recinto;
+import it.unicam.cs.mpgc.rpg130131.model.zoo.RisultatoCura;
 import it.unicam.cs.mpgc.rpg130131.model.zoo.Zoo;
 import it.unicam.cs.mpgc.rpg130131.persistence.PersistenzaException;
 import it.unicam.cs.mpgc.rpg130131.persistence.XMLSaveRepository;
@@ -63,8 +68,13 @@ class GameControllerTest {
         creaController(dado, zooIniziale, animale -> Map.of());
     }
 
-    /** Mappa di 3 celle di savana con un solo animale (un leone) e probabilità di cattura fissa al 50%. */
     private void creaController(RandomGenerator dado, Zoo zooIniziale, PoliticaRicompensa premio) {
+        creaController(dado, zooIniziale, premio, new Negozio(List.of()));
+    }
+
+    /** Mappa di 3 celle di savana con un solo animale (un leone) e probabilità di cattura fissa al 50%. */
+    private void creaController(RandomGenerator dado, Zoo zooIniziale, PoliticaRicompensa premio,
+                                Negozio negozio) {
         Mappa2D mappa = new Mappa2D(3, 1, p -> BiomaEnum.SAVANA);
         Catalogo catalogo = new Catalogo(
                 List.of(new VoceAnimale("Leone", RaritaEnum.COMUNE, 1, List.of("Leo"))),
@@ -78,6 +88,7 @@ class GameControllerTest {
                 mappa, giocatore, zoo, spawn,
                 new EngineCattura((animale, strumento, esca) -> 0.5, dado),
                 premio,
+                negozio,
                 new XMLSaveRepository(cartella.resolve("partita.xml"), registro),
                 1);
         controller.inizia();
@@ -209,10 +220,7 @@ class GameControllerTest {
     @Test
     void caricaRifiutaUnaPosizioneFuoriDallaMappa() throws Exception {
         Files.writeString(cartella.resolve("partita.xml"), """
-                <partita>
-                  <giocatore nome="Tester" x="99" y="0"><inventario/></giocatore>
-                  <zoo nome="Z"/>
-                </partita>
+                <giocatore nome="Tester" x="99" y="0" monete="0"><inventario/></giocatore>
                 """);
         Zoo prima = controller.getZoo();
 
@@ -229,12 +237,14 @@ class GameControllerTest {
         XMLSaveRepository repository =
                 new XMLSaveRepository(cartella.resolve("altro.xml"), RegistroSpecie.predefinito());
         EngineCattura engine = new EngineCattura((a, s, e) -> 0.5);
+        PoliticaRicompensa nessunPremio = animale -> Map.of();
+        Negozio negozioVuoto = new Negozio(List.of());
 
-        assertThrows(IllegalArgumentException.class,
-                () -> new GameController(mappa, fuori, zoo, spawn, engine, animale -> Map.of(), repository, 1));
-        assertThrows(IllegalArgumentException.class,
-                () -> new GameController(mappa, new Giocatore("Ok", new Posizione(0, 0), new Inventario()),
-                        zoo, spawn, engine,animale -> Map.of() ,repository, -1));
+        assertThrows(IllegalArgumentException.class, () -> new GameController(
+                mappa, fuori, zoo, spawn, engine, nessunPremio, negozioVuoto, repository, 1));
+        assertThrows(IllegalArgumentException.class, () -> new GameController(
+                mappa, new Giocatore("Ok", new Posizione(0, 0), new Inventario()),
+                zoo, spawn, engine, nessunPremio, negozioVuoto, repository, -1));
     }
 
     @Test
@@ -271,5 +281,149 @@ class GameControllerTest {
         spawn.rimuovi(giocatore.getPosizione());
 
         assertTrue(controller.anteprimaProbabilita(RETE, Cibo.NESSUNA_ESCA).isEmpty());
+    }
+
+    private Animale catturaUnAnimale() {
+        return controller.tentaCattura(RETE).animale();
+    }
+
+    @Test
+    void rilasciaDaLeMoneteDellaRarita() {
+        Animale animale = catturaUnAnimale();
+
+        int monete = controller.rilascia(animale);
+
+        assertEquals(RaritaEnum.COMUNE.getMoneteRilascio(), monete);
+        assertEquals(monete, giocatore.getMonete());
+        assertTrue(zoo.getAnimali().isEmpty());
+    }
+
+    @Test
+    void rilasciareUnAnimaleNonNelloZooLanciaEccezione() {
+        Animale estraneo = new Leone("X", RaritaEnum.COMUNE, StatoAnimale.SELVATICO);
+        assertThrows(IllegalArgumentException.class, () -> controller.rilascia(estraneo));
+    }
+
+    @Test
+    void dopoIlRilascioSiPuoCatturareDiNuovo() {
+        creaController(DADO_BASSO, zooConSavana());
+        Animale primo = catturaUnAnimale();
+        controller.rilascia(primo);
+        giocatore.getInventario().aggiungi(RETE, 1);
+        portaGiocatoreSuAnimale();
+
+        assertTrue(controller.tentaCattura(RETE).catturato());
+    }
+
+    @Test
+    void laMedicinaCuraEVieneConsumata() {
+        Animale animale = catturaUnAnimale();
+        animale.impostaVita(30);
+        Medicina antibiotico = new Medicina("Antibiotico", 15);
+        giocatore.getInventario().aggiungi(antibiotico, 1);
+
+        RisultatoCura risultato = controller.cura(animale, antibiotico);
+
+        assertEquals(EsitoCura.CURATO, risultato.esito());
+        assertEquals(15, risultato.puntiRecuperati());
+        assertEquals(45, animale.getVita());
+        assertEquals(0, giocatore.getInventario().quantita(antibiotico));
+    }
+
+    @Test
+    void curaSenzaLOggettoNonFaNulla() {
+        Animale animale = catturaUnAnimale();
+        animale.impostaVita(30);
+
+        RisultatoCura risultato = controller.cura(animale, new Medicina("Siero", 60));
+
+        assertEquals(EsitoCura.NON_POSSEDUTO, risultato.esito());
+        assertEquals(30, animale.getVita());
+    }
+
+    @Test
+    void ilCiboNonCuraSottoLaSogliaENonVieneConsumato() {
+        Animale animale = catturaUnAnimale();
+        animale.impostaVita(70);
+        Cibo frutta = new Cibo("Frutta", 0.05, 3);
+        giocatore.getInventario().aggiungi(frutta, 1);
+
+        RisultatoCura risultato = controller.cura(animale, frutta);
+
+        assertEquals(EsitoCura.CIBO_NON_ADATTO, risultato.esito());
+        assertEquals(70, animale.getVita());
+        assertEquals(1, giocatore.getInventario().quantita(frutta));
+    }
+
+    @Test
+    void ilCiboCuraSopraLaSoglia() {
+        Animale animale = catturaUnAnimale();
+        animale.impostaVita(90);
+        Cibo frutta = new Cibo("Frutta", 0.05, 3);
+        giocatore.getInventario().aggiungi(frutta, 1);
+
+        RisultatoCura risultato = controller.cura(animale, frutta);
+
+        assertEquals(EsitoCura.CURATO, risultato.esito());
+        assertEquals(93, animale.getVita());
+        assertEquals(0, giocatore.getInventario().quantita(frutta));
+    }
+
+    @Test
+    void compraSpendeMonetePerUnaUnita() {
+        VoceNegozio articolo = new VoceNegozio(RETE, 10);
+        creaController(DADO_BASSO, zooConSavana(), animale -> Map.of(), new Negozio(List.of(articolo)));
+        giocatore.aggiungiMonete(25);
+
+        assertEquals(EsitoAcquisto.ACQUISTATO, controller.compra(articolo));
+
+        assertEquals(15, giocatore.getMonete());
+        assertEquals(2, giocatore.getInventario().quantita(RETE));
+    }
+
+    @Test
+    void compraSenzaMoneteNonFaNulla() {
+        VoceNegozio articolo = new VoceNegozio(RETE, 10);
+        creaController(DADO_BASSO, zooConSavana(), animale -> Map.of(), new Negozio(List.of(articolo)));
+
+        assertEquals(EsitoAcquisto.MONETE_INSUFFICIENTI, controller.compra(articolo));
+        assertEquals(1, giocatore.getInventario().quantita(RETE));
+    }
+
+    @Test
+    void ampliaUnRecintoESpendeMonete() {
+        Recinto savana = zoo.getRecinti().getFirst();
+        int prezzo = controller.getNegozio().prezzoAmpliamento(savana);
+        giocatore.aggiungiMonete(prezzo);
+
+        assertEquals(EsitoAcquisto.ACQUISTATO, controller.ampliaRecinto(savana));
+
+        assertEquals(2 + Negozio.POSTI_PER_AMPLIAMENTO, savana.getCapienza());
+        assertEquals(0, giocatore.getMonete());
+    }
+
+    @Test
+    void ampliaSenzaMoneteNonCambiaLaCapienza() {
+        Recinto savana = zoo.getRecinti().getFirst();
+
+        assertEquals(EsitoAcquisto.MONETE_INSUFFICIENTI, controller.ampliaRecinto(savana));
+        assertEquals(2, savana.getCapienza());
+    }
+
+    @Test
+    void ampliareUnRecintoEstraneoLanciaEccezione() {
+        Recinto estraneo = new Recinto("Altro", BiomaEnum.DESERTO, 2);
+        assertThrows(IllegalArgumentException.class, () -> controller.ampliaRecinto(estraneo));
+    }
+
+    @Test
+    void salvaECaricaRipristinaLeMonete() throws Exception {
+        giocatore.aggiungiMonete(42);
+        controller.salva();
+        giocatore.aggiungiMonete(10);
+
+        assertTrue(controller.carica());
+
+        assertEquals(42, controller.getGiocatore().getMonete());
     }
 }

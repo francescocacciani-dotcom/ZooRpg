@@ -52,6 +52,7 @@ class XMLSaveRepositoryTest {
         StatoPartita originale = statoDiProva();
         XMLSaveRepository repository = repository("salvataggi/partita.xml");
 
+        originale.zoo().getAnimali().get(1).impostaVita(37);
         repository.salva(originale);
         StatoPartita caricato = repository.carica().orElseThrow();
 
@@ -70,6 +71,7 @@ class XMLSaveRepositoryTest {
             assertEquals(prima.get(i).getNome(), dopo.get(i).getNome());
             assertEquals(prima.get(i).getRarita(), dopo.get(i).getRarita());
             assertEquals(prima.get(i).getStato(), dopo.get(i).getStato());
+            assertEquals(prima.get(i).getVita(), dopo.get(i).getVita());
         }
         assertInstanceOf(Leone.class, dopo.get(0));
 
@@ -79,6 +81,8 @@ class XMLSaveRepositoryTest {
         assertEquals(3, giocatore.getInventario().quantita(RETE));
         assertEquals(2, giocatore.getInventario().quantita(CARNE));
         assertEquals(2, giocatore.getInventario().getContenuto().size());
+        assertEquals(37, dopo.get(1).getVita());
+        assertEquals(55, giocatore.getMonete());
     }
 
     @Test
@@ -112,7 +116,7 @@ class XMLSaveRepositoryTest {
     void bonusFuoriRangeRifiutatoDalloSchema() throws Exception {
         Files.writeString(cartella.resolve("bonus.xml"), """
                 <partita>
-                  <giocatore nome="T" x="0" y="0">
+                  <giocatore nome="T" x="0" y="0" monete="0">partitaConRecinto
                     <inventario><strumento nome="Rete" bonus="7" quantita="1"/></inventario>
                   </giocatore>
                   <zoo nome="Z"/>
@@ -127,7 +131,7 @@ class XMLSaveRepositoryTest {
         Files.writeString(cartella.resolve("incoerente.xml"), partitaConRecinto("""
                 <recinto nome="Palude" bioma="PALUDE" capienza="2">
                   <animale id="123e4567-e89b-12d3-a456-426614174000" specie="Leone"
-                           nome="Leo" rarita="RARO" stato="SELVATICO"/>
+                           nome="Leo" rarita="RARO" vita="100"/>
                 </recinto>
                 """));
         assertThrows(PersistenzaException.class, repository("incoerente.xml")::carica);
@@ -138,7 +142,7 @@ class XMLSaveRepositoryTest {
         Files.writeString(cartella.resolve("sconosciuta.xml"), partitaConRecinto("""
                 <recinto nome="Savana" bioma="SAVANA" capienza="2">
                   <animale id="123e4567-e89b-12d3-a456-426614174000" specie="Drago"
-                           nome="Smaug" rarita="LEGGENDARIO" stato="SELVATICO"/>
+                           nome="Smaug" rarita="LEGGENDARIO" vita="100"/>
                 </recinto>
                 """));
         assertThrows(PersistenzaException.class, repository("sconosciuta.xml")::carica);
@@ -147,7 +151,7 @@ class XMLSaveRepositoryTest {
     private static String partitaConRecinto(String recinto) {
         return """
                 <partita>
-                  <giocatore nome="T" x="0" y="0"><inventario/></giocatore>
+                  <giocatore nome="T" x="0" y="0" monete="0"><inventario/></giocatore>
                   <zoo nome="Z">
                     %s
                   </zoo>
