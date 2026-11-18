@@ -27,8 +27,7 @@ public record Cibo(String nome, double bonusEsca, int puntiVita) implements Ogge
         }
     }
 
-    /** Cibo che non cura.
-     *  ci possono essere cibi che non danno punti vita*/
+    /** Cibo che non cura. Ci possono essere cibi che non danno punti vita*/
     public Cibo(String nome, double bonusEsca) {
         this(nome, bonusEsca, 0);
     }
