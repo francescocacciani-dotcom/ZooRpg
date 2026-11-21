@@ -1,5 +1,7 @@
 package it.unicam.cs.mpgc.rpg130131.persistence;
 
+import java.io.Serial;
+
 /**
  * Eccezione lanciata quando si verifica un errore durante le operazioni di persistenza.
  * Questa eccezione indica che è fallita una lettura, scrittura o validazione dei dati
@@ -13,6 +15,9 @@ package it.unicam.cs.mpgc.rpg130131.persistence;
  * </ul>
  */
 public class PersistenzaException extends Exception {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     /**
      * Costruttore per creare un'eccezione con un messaggio di errore descrittivo.
