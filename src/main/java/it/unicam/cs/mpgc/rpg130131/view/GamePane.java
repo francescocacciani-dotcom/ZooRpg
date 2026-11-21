@@ -47,7 +47,7 @@ import java.util.Optional;
  * Schermata di gioco: dispone i pannelli, gestisce menu e tasti e li collega al {@link GameController}.
  * Non contiene regole di gioco: ogni azione viene delegata al controller e poi si ridisegna tutto.
  */
-public class GamePane extends BorderPane {
+public final class GamePane extends BorderPane {
 
     private final GameFactory factory;
     private final MappaView mappaView = new MappaView(new ImmaginiAnimali());

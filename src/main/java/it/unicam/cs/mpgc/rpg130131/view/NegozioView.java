@@ -19,7 +19,7 @@ import java.util.function.Consumer;
  * Pagina del negozio: articoli in vendita e ampliamento dei recinti.
  * Non contiene regole: mostra i dati e inoltra le scelte del giocatore.
  */
-public class NegozioView extends VBox implements VistaAggiornabile {
+public final class NegozioView extends VBox implements VistaAggiornabile {
 
     private final Label monete = new Label();
     private final ListView<VoceNegozio> articoli = new ListView<>();

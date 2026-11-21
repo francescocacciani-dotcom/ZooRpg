@@ -3,7 +3,7 @@ package it.unicam.cs.mpgc.rpg130131.view;
 import javafx.scene.control.ListView;
 
 /** Registro dei messaggi di gioco, con scorrimento automatico all'ultimo. */
-public class LogView extends ListView<String> {
+public final class LogView extends ListView<String> {
 
     private static final int MASSIMO_RIGHE = 200;
 

@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 
 /** Mostra l'animale presente nella cella e permette di scegliere strumento ed esca per catturarlo. */
-public class PannelloCattura extends VBox implements VistaAggiornabile {
+public final class PannelloCattura extends VBox implements VistaAggiornabile {
 
     private final Label descrizione = new Label();
     private final Label probabilita = new Label();

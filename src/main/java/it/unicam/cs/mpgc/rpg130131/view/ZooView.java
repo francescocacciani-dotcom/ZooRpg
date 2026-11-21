@@ -18,7 +18,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 /** Statistiche dello zoo e albero recinti → animali, con i comandi per rilasciare e curare. */
-public class ZooView extends VBox implements VistaAggiornabile {
+public final class ZooView extends VBox implements VistaAggiornabile {
 
     private final Label statistiche = new Label();
     private final TreeView<Object> albero = new TreeView<>();

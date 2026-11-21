@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Monete e oggetti posseduti dal giocatore: strumenti, cibi e medicine. */
-public class InventarioView extends VBox implements VistaAggiornabile {
+public final class InventarioView extends VBox implements VistaAggiornabile {
 
     private final Label monete = new Label();
     private final ListView<String> elenco = new ListView<>();
