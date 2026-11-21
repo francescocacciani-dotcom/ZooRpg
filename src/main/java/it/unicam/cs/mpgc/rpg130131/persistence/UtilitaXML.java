@@ -78,11 +78,21 @@ final class UtilitaXML {
 
     /**
      * Legge un documento XML da uno stream e lo valida rispetto allo schema XSD specificato.
+     * <p>
+     * Il metodo implementa parsing sicuro disabilitando le doctype e abilitando secure processing
+     * per prevenire attacchi XXE. Il parsing è eseguito in modo rigoroso: errori e fatalità
+     * interrompono immediatamente l'elaborazione, mentre gli avvisi sono ignorati.
+     * </p>
      *
-     * @param flusso lo stream contenente il documento XML da leggere
-     * @param schemaUrl URL dello schema XSD da utilizzare per la validazione
-     * @return il documento XML parseato e validato
-     * @throws PersistenzaException se il file non può essere letto o non è valido secondo lo schema
+     * @param flusso lo stream contenente il documento XML da leggere (non deve essere null)
+     * @param schemaUrl URL dello schema XSD da utilizzare per la validazione del documento
+     * @return il documento XML parseato e validato contro lo schema
+     * @throws PersistenzaException se:
+     *   <ul>
+     *     <li>lo stream non può essere letto (IOException)</li>
+     *     <li>il documento non è conforme allo schema XSD</li>
+     *     <li>si verifica un errore durante il parsing XML</li>
+     *   </ul>
      */
     static Document leggi(InputStream flusso, URL schemaUrl) throws PersistenzaException {
         try {
@@ -107,9 +117,18 @@ final class UtilitaXML {
 
     /**
      * Crea un nuovo documento XML vuoto pronto per essere popolato con elementi e attributi.
+     * <p>
+     * Il metodo restituisce un nuovo {@link org.w3c.dom.Document} generico creato dal parser
+     * di JAXB, utilizzabile come base per costruire documenti XML strutturati secondo uno schema.
+     * </p>
      *
-     * @return un nuovo documento XML vuoto creato dal parser
-     * @throws PersistenzaException se il parser non può inizializzare il documento
+     * @return un nuovo documento XML vuoto e radicato (ready to be populated)
+     * @throws PersistenzaException se:
+     *   <ul>
+     *     <li>il parser di documenti XML non può essere inizializzato</li>
+     *     <li>si verifica un'eccezione di configurazione del parser</li>
+     *   </ul>
+     * @see #leggi(InputStream, URL) per la lettura e validazione di documenti esistenti
      */
     static Document nuovoDocumento() throws PersistenzaException {
         try {
@@ -122,13 +141,23 @@ final class UtilitaXML {
     /**
      * Scrive un documento XML su un file, utilizzando una strategia di scrittura sicura
      * che prima scrive in un file temporaneo (.tmp) e poi sposta il file finale per
-     * evitare la corruzione dei dati in caso di interruzioni.
+     * evitare la corruzione dei dati in caso di interruzioni (write-ahead strategy).
+     * <p>
+     * Il file risultante è formattato con indentazione a 2 spazi per facilitare la lettura.
+     * Vengono impostati anche l'encoding UTF-8 e altre proprietà standard del transformer XML.
+     * La directory contenente il file viene creata automaticamente se non esiste già.
+     * </p>
      *
-     * <p>Il file risultante è formattato con indentazione a 2 spazi.</p>
-     *
-     * @param documento il documento XML da scrivere
-     * @param file il percorso del file dove salvare il documento
-     * @throws PersistenzaException se la scrittura fallisce (errori I/O, directory non scrivibile, ecc.)
+     * @param documento il documento XML da scrivere (devono essere salvati gli eventi, vedi nota)
+     * @param file il percorso completo del file dove salvare il documento XML
+     * @throws PersistenzaException se:
+     *   <ul>
+     *     <li>la directory parent del file non può essere creata</li>
+     *     <li>non è possibile scrivere nel file temporaneo (errori I/O, permessi mancanti)</li>
+     *     <li>i dati non possono essere spostati dal file temporaneo al file finale</li>
+     *   </ul>
+     * @see #leggi(InputStream, URL) per la lettura e validazione di documenti XML
+     * @see SaveRepository#salva per l'uso in operazioni di persistenza della partita
      */
     static void scrivi(Document documento, Path file) throws PersistenzaException {
         Path temporaneo = file.resolveSibling(file.getFileName() + ".tmp");
