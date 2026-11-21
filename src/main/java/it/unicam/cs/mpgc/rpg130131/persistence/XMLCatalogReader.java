@@ -192,6 +192,25 @@ public class XMLCatalogReader implements CatalogReader {
                 .toList();
     }
 
+    /**
+     * Esegue il parsing della sezione {@code strumenti} del documento XML.
+     * <p>
+     * Il metodo estrae tutti gli elementi figlio con etichetta &lt;strumento&gt; dalla sezione principale
+     * {@code /catalog/animali.xml/strumenti} e costruisce una lista di oggetti {@link StrumentoCattura}.
+     * Ogni strumento viene istanziato usando:
+     * </p>
+     * <ul>
+     *   <li>{@code nome}- attributo che identifica lo strumento di cattura</li>
+     *   <li>{@code bonus}- valore a virgola mobile (double) dell'attributo che rappresenta il bonus
+     *       applicato quando si usa lo strumento per catturare un animale</span&gt;</li>
+     * </ul>
+     *
+     * @param radice il nodo elemento radice (&lt;/catalog/animali.xml&gt;) del documento XML parseato
+     * @return una lista di oggetti {@link StrumentoCattura} contenenti tutti gli strumenti disponibili nel catalogo del gioco, nell'ordine in cui appaiono nel file XML
+     * @see #animali(Element)
+     * @see #cibi(Element)
+     * @see #medicine(Element)
+     */
     private static List<StrumentoCattura> strumenti(Element radice) {
         return figli(figlio(radice, "strumenti"), "strumento").stream()
                 .map(e -> new StrumentoCattura(
@@ -200,6 +219,26 @@ public class XMLCatalogReader implements CatalogReader {
                 .toList();
     }
 
+    /**
+     * Esegue il parsing della sezione {@code cibi} del documento XML.
+     * <p>
+     * Il metodo estrae tutti gli elementi figlio con etichetta &lt;cibo&gt; dalla sezione principale
+     * {@code /catalog/animali.xml/cibi} e costruisce una lista di oggetti {@link Cibo}.
+     * Ogni cibo viene istanziato usando:
+     * </p>
+     * <ul>
+     *   <li>{@code nome}- attributo che identifica il tipo di cibo usato come esca</li>
+     *   <li>{@code bonus}- valore a virgola mobile (double) dell'attributo che rappresenta il bonus
+     *       applicato all'esca quando si usa questo cibo per attirare un animale</span&gt;</li>
+     *   <li>{@code cura}- valore intero dell'attributo che indica i punti vita restaurati quando si mangia questo cibo</span&gt;</li>
+     * </ul>
+     *
+     * @param radice il nodo elemento radice (&lt;/catalog/animali.xml&gt;) del documento XML parseato
+     * @return una lista di oggetti {@link Cibo} contenenti tutti i tipi di cibo disponibili nel catalogo del gioco, nell'ordine in cui appaiono nel file XML
+     * @see #animali(Element)
+     * @see #strumenti(Element)
+     * @see #medicine(Element)
+     */
     private static List<Cibo> cibi(Element radice) {
         return figli(figlio(radice, "cibi"), "cibo").stream()
                 .map(e -> new Cibo(
@@ -209,6 +248,24 @@ public class XMLCatalogReader implements CatalogReader {
                 .toList();
     }
 
+    /**
+     * Esegue il parsing della sezione {@code medicine} del documento XML.
+     * <p>
+     * Il metodo estrae tutti gli elementi figlio con etichetta &lt;medicina&gt; dalla sezione principale
+     * {@code /catalog/animali.xml/medicine} e costruisce una lista di oggetti {@link Medicina}.
+     * Ogni medicina viene istanziata usando:
+     * </p>
+     * <ul>
+     *   <li>{@code nome}- attributo che identifica il tipo di medicina</li>
+     *   <li>{@code cura}- valore intero dell'attributo che indica i punti vita restaurati quando si usa questa medicina</span&gt;</li>
+     * </ul>
+     *
+     * @param radice il nodo elemento radice (&lt;/catalog/animali.xml&gt;) del documento XML parseato
+     * @return una lista di oggetti {@link Medicina} contenenti tutti i tipi di medicina disponibili nel catalogo del gioco, nell'ordine in cui appaiono nel file XML
+     * @see #animali(Element)
+     * @see #strumenti(Element)
+     * @see #cibi(Element)
+     */
     private static List<Medicina> medicine(Element radice) {
         return figli(figlio(radice, "medicine"), "medicina").stream()
                 .map(e -> new Medicina(
@@ -217,6 +274,34 @@ public class XMLCatalogReader implements CatalogReader {
                 .toList();
     }
 
+    /**
+     * Esegue il parsing della sezione {@code negozio} del documento XML.
+     * <p>
+     * Il metodo estrae tutti gli elementi figlio con etichetta &lt;articolo&gt; dalla sezione principale
+     * {@code /catalog/animali.xml/negozio} e costruisce una lista di oggetti {@link VoceNegozio}.
+     * Ogni voce di negozio viene creata usando:
+     * </p>
+     * <ul>
+     *   <li>{@code tipo}- attributo che indica il tipo di oggetto venduto (deve corrispondere a un valore definito
+     *       nel record interno {@link Oggetti}, es. "STRUMENTO", "CIBO", o "MEDICINA")</span&gt;</li>
+     *   <li>{@code nome}- attributo che identifica il nome specifico dell'oggetto da vendere</li>
+     * </ul>
+     * <p>
+     * Per risolvere la coppia ({@code tipo}, {@code nome}) in un oggetto effettivo, il metodo usa il record interno
+     * {@link Oggetti} passato come parametro, che contiene tutte le liste di oggetti del catalogo.
+     * </p>
+     * <p>
+     * Infine, viene creato una {@link VoceNegozio} con l'oggetto risolvuto e il prezzo indicato dall'attributo &lt;prezzo&gt;.
+     * </p>
+     *
+     * @param radice il nodo elemento radice (&lt;/catalog/animali.xml&gt;) del documento XML parseato
+     * @param oggetti il record interno {@link Oggetti} che contiene tutte le liste di oggetti del catalogo (strumenti, cibi, medicine)
+     * @return una lista di oggetti {@link VoceNegozio} contenenti tutti gli articoli disponibili per l'acquisto al negozio, nell'ordine in cui appaiono nel file XML
+     * @see #animali(Element)
+     * @see #strumenti(Element)
+     * @see #cibi(Element)
+     * @see #medicine(Element)
+     */
     private static List<VoceNegozio> negozio(Element radice, Oggetti oggetti) {
         return figli(figlio(radice, "negozio"), "articolo").stream()
                 .map(e -> new VoceNegozio(
@@ -225,6 +310,34 @@ public class XMLCatalogReader implements CatalogReader {
                 .toList();
     }
 
+    /**
+     * Esegue il parsing della sezione {@code kit} del documento XML.
+     * <p>
+     * Il metodo estrae tutti gli elementi figlio con etichetta &lt;voce&gt; dalla sezione principale
+     * {@code /catalog/animali.xml/kit} e costruisce una lista di oggetti {@link Scorta}.
+     * Ogni voce del kit viene creata usando:
+     * </p>
+     * <ul>
+     *   <li>{@code tipo}- attributo che indica il tipo di oggetto incluso nel kit (deve corrispondere a un valore definito
+     *       nel record interno {@link Oggetti}, es. "STRUMENTO", "CIBO", o "MEDICINA")</span&gt;</li>
+     *   <li>{@code nome}- attributo che identifica il nome specifico dell'oggetto incluso nel kit</li>
+     * </ul>
+     * <p>
+     * Per risolvere la coppia ({@code tipo}, {@code nome}) in un oggetto effettivo, il metodo usa il record interno
+     * {@link Oggetti} passato come parametro.
+     * </p>
+     * <p>
+     * Infine, viene creato una {@link Scorta} con l'oggetto risolvuto e la quantità indicata dall'attributo &lt;quantita&gt;.
+     * </p>
+     *
+     * @param radice il nodo elemento radice (&lt;/catalog/animali.xml&gt;) del documento XML parseato
+     * @param oggetti il record interno {@link Oggetti} che contiene tutte le liste di oggetti del catalogo (strumenti, cibi, medicine)
+     * @return una lista di oggetti {@link Scorta} contenenti tutti gli elementi del kit iniziale, nell'ordine in cui appaiono nel file XML
+     * @see #animali(Element)
+     * @see #strumenti(Element)
+     * @see #cibi(Element)
+     * @see #medicine(Element)
+     */
     private static List<Scorta> kit(Element radice, Oggetti oggetti) {
         return figli(figlio(radice, "kit"), "voce").stream()
                 .map(e -> new Scorta(
