@@ -45,26 +45,17 @@ cd ZooRpg
 
 Sono state usate diverse IA per scopi diversi tra di loro
 
-## NotebookLM
+### NotebookLM
+Studio
 
-- **Studio** di argomenti più complessi.
-- Verifica delle conoscenze tramite test.
+### Gemini
+Brainstorming
 
-## Gemini
-- collegato a NotebookLM per avere conferma delle mie idee del progetto e delle dinamiche di gioco
-- **Chiarimento** di concetti avanzati di Java
+### Claude
+Debug e test
 
-## Claude 
+### Qwen3.5:9b (su claude code)
+Scrittura codice boilerplate
 
-- **Struttura** discussa e confermata da claude 
-- **Debug:** risoluzione di problemi di compilazione durante le prime fasi del progetto (Problemi con OneDrive).
-- **Controllo finale** del progetto
-
-## Qwen3.5:9b (su claude code)
-
-- **Scrittura codice boilerplate** (metodi getter e setter, classi degli animali)
-- **Scrittura test** per la validazione del codice
-- **Scrittura JavaDoc** 
-
-### Documentazione
-La dichiarazione dettagliata è nella [Wiki](https://github.com/francescocacciani-dotcom/ZooRpg/wiki/Home).
+# Documentazione
+La Documentazione dettagliata è nella [Wiki](https://github.com/francescocacciani-dotcom/ZooRpg/wiki/Home).
