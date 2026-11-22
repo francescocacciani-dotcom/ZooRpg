@@ -1,4 +1,4 @@
-# 📌 Zoo Rescue RPG
+# 🐾 Zoo Rescue RPG
 
 Gioco di ruolo in Java (JavaFX) in cui si esplorano mappe per catturare animali selvatici o in pericolo e portarli nel proprio zoo.
 Gli animali si possono curare o rilasciare in cambio di monete, da spendere nel negozio per comprare strumenti, cibo, medicine e nuovo spazio per i recinti.
